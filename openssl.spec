@@ -14,13 +14,13 @@
 
 Summary: Utilities from the general purpose cryptography library with TLS implementation
 Name: openssl
-Version: 3.0.5
-Release: 2%{?dist}
+Version: 3.0.8
+Release: 1%{?dist}
 Epoch: 1
 # We have to remove certain patented algorithms from the openssl source
 # tarball with the hobble-openssl script which is included below.
 # The original openssl upstream tarball cannot be shipped in the .src.rpm.
-Source: openssl-%{version}-hobbled.tar.xz
+Source: openssl-%{version}-hobbled.tar.gz
 Source1: hobble-openssl
 Source2: Makefile.certificate
 Source3: genpatches
@@ -73,8 +73,6 @@ Patch53: 0053-Add-SHA1-probes.patch
 # The patch is incorporated in 3.0.3 but we provide this function since 3.0.1
 # so the patch should persist
 Patch56: 0056-strcasecmp.patch
-#CVE-2022-3602
-Patch79: 0079-CVE-2022-3602.patch
 
 License: ASL 2.0
 URL: http://www.openssl.org/
@@ -402,6 +400,17 @@ install -m644 %{SOURCE9} \
 %ldconfig_scriptlets libs
 
 %changelog
+* Thu Feb 09 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.8-1
+- Rebase to upstream version 3.0.8
+  Resolves: CVE-2022-4203
+  Resolves: CVE-2022-4304
+  Resolves: CVE-2022-4450
+  Resolves: CVE-2023-0215
+  Resolves: CVE-2023-0216
+  Resolves: CVE-2023-0217
+  Resolves: CVE-2023-0286
+  Resolves: CVE-2023-0401
+
 * Tue Nov 01 2022 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.5-2
 - CVE-2022-3602: X.509 Email Address Buffer Overflow
 - CVE-2022-3786: X.509 Email Address Buffer Overflow
