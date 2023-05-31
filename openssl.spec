@@ -14,7 +14,7 @@
 
 Summary: Utilities from the general purpose cryptography library with TLS implementation
 Name: openssl
-Version: 3.0.8
+Version: 3.0.9
 Release: 1%{?dist}
 Epoch: 1
 # We have to remove certain patented algorithms from the openssl source
@@ -414,6 +414,14 @@ install -m644 %{SOURCE9} \
 %ldconfig_scriptlets libs
 
 %changelog
+* Wed May 31 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-1
+- Rebase to upstream version 3.0.9
+  Resolves: CVE-2023-0464
+  Resolves: CVE-2023-0465
+  Resolves: CVE-2023-0466
+  Resolves: CVE-2023-1255
+  Resolves: CVE-2023-2650
+
 * Thu Feb 09 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.8-1
 - Rebase to upstream version 3.0.8
   Resolves: CVE-2022-4203
