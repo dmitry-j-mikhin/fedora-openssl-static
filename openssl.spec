@@ -28,8 +28,8 @@ print(string.sub(hash, 0, 16))
 
 Summary: Utilities from the general purpose cryptography library with TLS implementation
 Name: openssl
-Version: 3.0.8
-Release: 2%{?dist}
+Version: 3.0.9
+Release: 1%{?dist}
 Epoch: 1
 Source: openssl-%{version}.tar.gz
 Source2: Makefile.certificate
@@ -483,6 +483,14 @@ install -m644 %{SOURCE9} \
 %ldconfig_scriptlets libs
 
 %changelog
+* Wed May 31 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-1
+- Rebase to upstream version 3.0.9
+  Resolves: CVE-2023-0464
+  Resolves: CVE-2023-0465
+  Resolves: CVE-2023-0466
+  Resolves: CVE-2023-1255
+  Resolves: CVE-2023-2650
+
 * Tue Mar 21 2023 Sahana Prasad <sahana@redhat.com> - 1:3.0.8-2
 - Upload new upstream sources without manually hobbling them.
 - Remove the hobbling script as it is redundant. It is now allowed to ship

@@ -53,9 +53,9 @@ diff -up openssl-3.0.1/crypto/ec/ecdsa_ossl.c.fips_kat_signature openssl-3.0.1/c
 +extern int REDHAT_FIPS_signature_st;
 +#endif
 +
- int ossl_ecdsa_sign_setup(EC_KEY *eckey, BN_CTX *ctx_in, BIGNUM **kinvp,
-                           BIGNUM **rp)
- {
+ #define MIN_ECDSA_SIGN_ORDERBITS 64
+ /*
+  * It is highly unlikely that a retry will happen,
 @@ -126,6 +130,11 @@ static int ecdsa_sign_setup(EC_KEY *ecke
          goto err;
  

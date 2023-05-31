@@ -183,11 +183,11 @@ index 54e2a1c61ca..094a6632b66 100644
 +        }
 +    }
 +
-     if (blinding) {
-         /*
-          * ossl_bn_rsa_do_unblind() combines blinding inversion and
+     if (blinding)
+         if (!rsa_blinding_invert(blinding, ret, unblind, ctx))
+             goto err;
 @@ -471,9 +545,12 @@ static int rsa_ossl_private_decrypt(int flen, const unsigned char *from,
-     }
+         goto err;
  
      switch (padding) {
 -    case RSA_PKCS1_PADDING:
