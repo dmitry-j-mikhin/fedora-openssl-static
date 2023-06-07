@@ -231,7 +231,7 @@ diff --git a/providers/fips/self_test_kats.c b/providers/fips/self_test_kats.c
 index b6d5e8e134..77eec075e6 100644
 --- a/providers/fips/self_test_kats.c
 +++ b/providers/fips/self_test_kats.c
-@@ -444,11 +444,14 @@ static int self_test_sign(const ST_KAT_SIGN *t,
+@@ -444,10 +444,13 @@ static int self_test_sign(const ST_KAT_SIGN *t,
      int ret = 0;
      OSSL_PARAM *params = NULL, *params_sig = NULL;
      OSSL_PARAM_BLD *bld = NULL;
@@ -241,7 +241,6 @@ index b6d5e8e134..77eec075e6 100644
      EVP_PKEY *pkey = NULL;
 -    unsigned char sig[256];
      BN_CTX *bnctx = NULL;
-     BIGNUM *K = NULL;
 +    const char *msg = "Hello World!";
 +    unsigned char sig[256];
      size_t siglen = sizeof(sig);

@@ -15,16 +15,8 @@ diff -up openssl-3.0.1/providers/common/capabilities.c.fipsmin3 openssl-3.0.1/pr
 diff -up openssl-3.0.1/providers/fips/fipsprov.c.fipsmin2 openssl-3.0.1/providers/fips/fipsprov.c
 --- openssl-3.0.1/providers/fips/fipsprov.c.fipsmin2	2022-05-05 11:42:58.596848856 +0200
 +++ openssl-3.0.1/providers/fips/fipsprov.c	2022-05-05 11:55:42.997562712 +0200
-@@ -54,7 +54,6 @@ static void fips_deinit_casecmp(void);
- 
- #define ALGC(NAMES, FUNC, CHECK) { { NAMES, FIPS_DEFAULT_PROPERTIES, FUNC }, CHECK }
- #define ALG(NAMES, FUNC) ALGC(NAMES, FUNC, NULL)
--
- extern OSSL_FUNC_core_thread_start_fn *c_thread_start;
- int FIPS_security_check_enabled(OSSL_LIB_CTX *libctx);
- 
 @@ -191,13 +190,13 @@ static int fips_get_params(void *provctx
-                                               &fips_prov_ossl_ctx_method);
+                                               OSSL_LIB_CTX_FIPS_PROV_INDEX);
  
      p = OSSL_PARAM_locate(params, OSSL_PROV_PARAM_NAME);
 -    if (p != NULL && !OSSL_PARAM_set_utf8_ptr(p, "OpenSSL FIPS Provider"))
@@ -58,8 +50,8 @@ diff -up openssl-3.0.1/providers/fips/fipsprov.c.fipsmin2 openssl-3.0.1/provider
      ALGC(PROV_NAMES_AES_256_CBC_HMAC_SHA256, ossl_aes256cbc_hmac_sha256_functions,
           ossl_cipher_capable_aes_cbc_hmac_sha256),
  #ifndef OPENSSL_NO_DES
--    ALG(PROV_NAMES_DES_EDE3_ECB, ossl_tdes_ede3_ecb_functions),
--    ALG(PROV_NAMES_DES_EDE3_CBC, ossl_tdes_ede3_cbc_functions),
+-    UNAPPROVED_ALG(PROV_NAMES_DES_EDE3_ECB, ossl_tdes_ede3_ecb_functions),
+-    UNAPPROVED_ALG(PROV_NAMES_DES_EDE3_CBC, ossl_tdes_ede3_cbc_functions),
 +    /* We don't certify 3DES in our FIPS provider */
 +    /* ALG(PROV_NAMES_DES_EDE3_ECB, ossl_tdes_ede3_ecb_functions),
 +    ALG(PROV_NAMES_DES_EDE3_CBC, ossl_tdes_ede3_cbc_functions), */
@@ -90,7 +82,7 @@ diff -up openssl-3.0.1/providers/fips/fipsprov.c.fipsmin2 openssl-3.0.1/provider
  #endif
      { PROV_NAMES_TLS1_PRF, FIPS_DEFAULT_PROPERTIES,
        ossl_kdf_tls1_prf_keyexch_functions },
-@@ -403,12 +406,14 @@ static const OSSL_ALGORITHM fips_keyexch
+@@ -403,13 +406,14 @@ static const OSSL_ALGORITHM fips_keyexch
  
  static const OSSL_ALGORITHM fips_signature[] = {
  #ifndef OPENSSL_NO_DSA
@@ -100,8 +92,9 @@ diff -up openssl-3.0.1/providers/fips/fipsprov.c.fipsmin2 openssl-3.0.1/provider
  #endif
      { PROV_NAMES_RSA, FIPS_DEFAULT_PROPERTIES, ossl_rsa_signature_functions },
  #ifndef OPENSSL_NO_EC
--    { PROV_NAMES_ED25519, FIPS_DEFAULT_PROPERTIES, ossl_ed25519_signature_functions },
--    { PROV_NAMES_ED448, FIPS_DEFAULT_PROPERTIES, ossl_ed448_signature_functions },
+-    { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
+-      ossl_ed25519_signature_functions },
+-    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions },
 +    /* We don't certify Edwards curves in our FIPS provider */
 +    /* { PROV_NAMES_ED25519, FIPS_DEFAULT_PROPERTIES, ossl_ed25519_signature_functions },
 +    { PROV_NAMES_ED448, FIPS_DEFAULT_PROPERTIES, ossl_ed448_signature_functions }, */
@@ -130,9 +123,9 @@ diff -up openssl-3.0.1/providers/fips/fipsprov.c.fipsmin2 openssl-3.0.1/provider
        PROV_DESCS_X25519 },
      { PROV_NAMES_X448, FIPS_DEFAULT_PROPERTIES, ossl_x448_keymgmt_functions,
        PROV_DESCS_X448 },
-     { PROV_NAMES_ED25519, FIPS_DEFAULT_PROPERTIES, ossl_ed25519_keymgmt_functions,
+     { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES, ossl_ed25519_keymgmt_functions,
        PROV_DESCS_ED25519 },
-     { PROV_NAMES_ED448, FIPS_DEFAULT_PROPERTIES, ossl_ed448_keymgmt_functions,
+     { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_keymgmt_functions,
 -      PROV_DESCS_ED448 },
 +      PROV_DESCS_ED448 }, */
  #endif
@@ -158,22 +151,6 @@ diff -up openssl-3.0.1/providers/fips/self_test_data.inc.fipsmin3 openssl-3.0.1/
  /* AES-256 GCM test data */
  static const unsigned char aes_256_gcm_key[] = {
      0x92, 0xe1, 0x1d, 0xcd, 0xaa, 0x86, 0x6f, 0x5c,
-@@ -235,6 +236,7 @@ static const unsigned char aes_128_ecb_c
- };
- 
- static const ST_KAT_CIPHER st_kat_cipher_tests[] = {
-+#if 0
- #ifndef OPENSSL_NO_DES
-     {
-         {
-@@ -248,6 +250,7 @@ static const ST_KAT_CIPHER st_kat_cipher
-         ITM(des_ede3_cbc_iv),
-     },
- #endif
-+#endif
-     {
-         {
-             OSSL_SELF_TEST_DESC_CIPHER_AES_GCM,
 @@ -1424,8 +1427,9 @@ static const ST_KAT_PARAM ecdsa_bin_key[
  # endif /* OPENSSL_NO_EC2M */
  #endif /* OPENSSL_NO_EC */
@@ -193,9 +170,9 @@ diff -up openssl-3.0.1/providers/fips/self_test_data.inc.fipsmin3 openssl-3.0.1/
 -
 +#endif
 +#endif
- static const ST_KAT_SIGN st_kat_sign_tests[] = {
-     {
-         OSSL_SELF_TEST_DESC_SIGN_RSA,
+ /* Hash DRBG inputs for signature KATs */
+ static const unsigned char sig_kat_entropyin[] = {
+     0x06, 0x6d, 0xc8, 0xce, 0x75, 0xb2, 0x89, 0x66, 0xa6, 0x85, 0x16, 0x3f,
 @@ -1583,6 +1587,7 @@ static const ST_KAT_SIGN st_kat_sign_tes
      },
  # endif
@@ -205,7 +182,7 @@ diff -up openssl-3.0.1/providers/fips/self_test_data.inc.fipsmin3 openssl-3.0.1/
      {
          OSSL_SELF_TEST_DESC_SIGN_DSA,
 @@ -1595,6 +1600,7 @@ static const ST_KAT_SIGN st_kat_sign_tes
-          */
+         ITM(dsa_expected_sig)
      },
  #endif /* OPENSSL_NO_DSA */
 +#endif
@@ -401,8 +378,8 @@ diff -up openssl-3.0.1/test/recipes/30-test_evp.t.fipsmin3 openssl-3.0.1/test/re
                  evpciph_aes_stitched.txt
 -                evpciph_des3_common.txt
                  evpkdf_hkdf.txt
-                 evpkdf_pbkdf1.txt
-                 evpkdf_pbkdf2.txt
+                 evpkdf_kbkdf_counter.txt
+                 evpkdf_kbkdf_kmac.txt
 @@ -66,12 +65,6 @@ push @files, qw(
                  evppkey_dh.txt
                 ) unless $no_dh;
@@ -441,8 +418,8 @@ diff -up openssl-3.0.1/test/recipes/30-test_evp_data/evpmac_common.txt.fipsmin3 
 --- openssl-3.0.1/test/recipes/30-test_evp_data/evpmac_common.txt.fipsmin3	2022-05-05 14:46:32.721700697 +0200
 +++ openssl-3.0.1/test/recipes/30-test_evp_data/evpmac_common.txt	2022-05-05 14:51:40.205418897 +0200
 @@ -328,6 +328,7 @@ Input = 68F2E77696CE7AE8E2CA4EC588E54100
- Output = 00BDA1B7E87608BCBF470F12157F4C07
- 
+ Input = 68F2E77696CE7AE8E2CA4EC588E541002E58495C08000F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D0007
+ Result = MAC_INIT_ERROR
  
 +Availablein = default
  Title = KMAC Tests (From NIST)

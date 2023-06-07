@@ -28,8 +28,8 @@ print(string.sub(hash, 0, 16))
 
 Summary: Utilities from the general purpose cryptography library with TLS implementation
 Name: openssl
-Version: 3.0.8
-Release: 2%{?dist}
+Version: 3.1.1
+Release: 1%{?dist}
 Epoch: 1
 Source: openssl-%{version}.tar.gz
 Source2: Makefile.certificate
@@ -96,7 +96,8 @@ Patch49: 0049-Selectively-disallow-SHA1-signatures.patch
 Patch49: 0049-Allow-disabling-of-SHA1-signatures.patch
 %endif
 # Backport of patch for RHEL for Edge rhbz #2027261
-Patch51: 0051-Support-different-R_BITS-lengths-for-KBKDF.patch
+# To be removed
+# Patch51: 0051-Support-different-R_BITS-lengths-for-KBKDF.patch
 %if 0%{?rhel}
 # Allow SHA1 in seclevel 2 if rh-allow-sha1-signatures = yes
 Patch52: 0052-Allow-SHA1-in-seclevel-2-if-rh-allow-sha1-signatures.patch
@@ -119,18 +120,22 @@ Patch56: 0056-strcasecmp.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2053289
 Patch58: 0058-FIPS-limit-rsa-encrypt.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2069235
-Patch60: 0060-FIPS-KAT-signature-tests.patch
+# This patch to be removed
+# Tests for 384/521 curves TBD
+# Patch60: 0060-FIPS-KAT-signature-tests.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2087147
 Patch61: 0061-Deny-SHA-1-signature-verification-in-FIPS-provider.patch
 Patch62: 0062-fips-Expose-a-FIPS-indicator.patch
 # https://github.com/openssl/openssl/commit/44a563dde1584cd9284e80b6e45ee5019be8d36c
 # https://github.com/openssl/openssl/commit/345c99b6654b8313c792d54f829943068911ddbd
 # Regression on Power8, see rhbz2124845, https://github.com/openssl/openssl/issues/19163; fix in 0079-Fix-AES-GCM-on-Power-8-CPUs.patch
-Patch71: 0071-AES-GCM-performance-optimization.patch
+# To be removed
+# Patch71: 0071-AES-GCM-performance-optimization.patch
 # https://github.com/openssl/openssl/commit/f596bbe4da779b56eea34d96168b557d78e1149
 # https://github.com/openssl/openssl/commit/7e1f3ffcc5bc15fb9a12b9e3bb202f544c6ed5aa
 # hunks in crypto/ppccap.c from https://github.com/openssl/openssl/commit/f5485b97b6c9977c0d39c7669b9f97a879312447
-Patch72: 0072-ChaCha20-performance-optimizations-for-ppc64le.patch
+# To be removed
+# Patch72: 0072-ChaCha20-performance-optimizations-for-ppc64le.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2102535
 Patch73: 0073-FIPS-Use-OAEP-in-KATs-support-fixed-OAEP-seed.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2102535
@@ -149,7 +154,8 @@ Patch77: 0077-FIPS-140-3-zeroization.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2114772
 Patch78: 0078-Add-FIPS-indicator-parameter-to-HKDF.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=2124845, https://github.com/openssl/openssl/pull/19182
-Patch79: 0079-Fix-AES-GCM-on-Power-8-CPUs.patch
+# To be removed
+# Patch79: 0079-Fix-AES-GCM-on-Power-8-CPUs.patch
 # https://github.com/openssl/openssl/pull/13817
 Patch100: 0100-RSA-PKCS15-implicit-rejection.patch
 
@@ -483,6 +489,14 @@ install -m644 %{SOURCE9} \
 %ldconfig_scriptlets libs
 
 %changelog
+* Wed May 31 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-1
+- Rebase to upstream version 3.1.1
+  Resolves: CVE-2023-0464
+  Resolves: CVE-2023-0465
+  Resolves: CVE-2023-0466
+  Resolves: CVE-2023-1255
+  Resolves: CVE-2023-2650
+
 * Tue Mar 21 2023 Sahana Prasad <sahana@redhat.com> - 1:3.0.8-2
 - Upload new upstream sources without manually hobbling them.
 - Remove the hobbling script as it is redundant. It is now allowed to ship

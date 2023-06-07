@@ -9,7 +9,7 @@ diff -up openssl-3.0.1/providers/implementations/rands/seeding/rand_unix.c.fipsr
 +# include <openssl/evp.h>
  
  static uint64_t get_time_stamp(void);
- static uint64_t get_timer_bits(void);
+
 @@ -342,66 +342,8 @@ static ssize_t syscall_random(void *buf,
       * which is way below the OSSL_SSIZE_MAX limit. Therefore sign conversion
       * between size_t and ssize_t is safe even without a range check.

@@ -1,9 +1,9 @@
 diff -up openssl-3.0.0-alpha13/crypto/context.c.kernel-fips openssl-3.0.0-alpha13/crypto/context.c
 --- openssl-3.0.0-alpha13/crypto/context.c.kernel-fips	2021-03-16 00:09:55.814826432 +0100
 +++ openssl-3.0.0-alpha13/crypto/context.c	2021-03-16 00:15:55.129043811 +0100
-@@ -12,11 +12,46 @@
- #include "crypto/ctype.h"
- #include "crypto/rand.h"
+@@ -12,6 +12,41 @@
+ #include "internal/provider.h"
+ #include "crypto/context.h"
  
 +# include <sys/types.h>
 +# include <sys/stat.h>
@@ -11,11 +11,6 @@ diff -up openssl-3.0.0-alpha13/crypto/context.c.kernel-fips openssl-3.0.0-alpha1
 +# include <unistd.h>
 +# include <openssl/evp.h>
 +
- struct ossl_lib_ctx_onfree_list_st {
-     ossl_lib_ctx_onfree_fn *fn;
-     struct ossl_lib_ctx_onfree_list_st *next;
- };
- 
 +# define FIPS_MODE_SWITCH_FILE "/proc/sys/crypto/fips_enabled"
 +
 +static int kernel_fips_flag;
@@ -46,16 +41,16 @@ diff -up openssl-3.0.0-alpha13/crypto/context.c.kernel-fips openssl-3.0.0-alpha1
 +
 +
  struct ossl_lib_ctx_st {
-     CRYPTO_RWLOCK *lock;
-     CRYPTO_EX_DATA data;
+     CRYPTO_RWLOCK *lock, *rand_crngt_lock;
+     OSSL_EX_DATA_GLOBAL global;
 @@ -121,6 +170,7 @@ static CRYPTO_THREAD_LOCAL default_conte
  
  DEFINE_RUN_ONCE_STATIC(default_context_do_init)
  {
 +	 read_kernel_fips_flag();
-     return CRYPTO_THREAD_init_local(&default_context_thread_local, NULL)
-         && context_init(&default_context_int);
- }
+     if (!CRYPTO_THREAD_init_local(&default_context_thread_local, NULL))
+         goto err;
+ 
 diff -up openssl-3.0.1/include/internal/provider.h.embed-fips openssl-3.0.1/include/internal/provider.h
 --- openssl-3.0.1/include/internal/provider.h.embed-fips	2022-01-11 13:13:08.323238760 +0100
 +++ openssl-3.0.1/include/internal/provider.h	2022-01-11 13:13:43.522558909 +0100

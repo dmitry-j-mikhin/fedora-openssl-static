@@ -34,6 +34,6 @@ diff -up openssl-3.0.1/providers/fips/self_test.c.earlykats openssl-3.0.1/provid
 -            goto end;
 -        }
 -    }
-     ok = 1;
- end:
-     OSSL_SELF_TEST_free(ev);
+ 
+     /* Verify that the RNG has been restored properly */
+     testrand = EVP_RAND_fetch(st->libctx, "TEST-RAND", NULL);

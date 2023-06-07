@@ -258,8 +258,8 @@ index 1291299b6e..e234341e6a 100644
 +# define OSSL_LIB_CTX_LEGACY_DIGEST_SIGNATURES      19
 +# define OSSL_LIB_CTX_MAX_INDEXES                   20
  
- # define OSSL_LIB_CTX_METHOD_LOW_PRIORITY          -1
- # define OSSL_LIB_CTX_METHOD_DEFAULT_PRIORITY       0
+ OSSL_LIB_CTX *ossl_lib_ctx_get_concrete(OSSL_LIB_CTX *ctx);
+ int ossl_lib_ctx_is_default(OSSL_LIB_CTX *ctx);
 diff --git a/include/internal/sslconf.h b/include/internal/sslconf.h
 index fd7f7e3331..05464b0655 100644
 --- a/include/internal/sslconf.h
@@ -493,8 +493,8 @@ index 10b4e57d79..2d3c363bb0 100644
 --- a/util/libcrypto.num
 +++ b/util/libcrypto.num
 @@ -5426,3 +5426,5 @@ ASN1_item_d2i_ex                        5552	3_0_0	EXIST::FUNCTION:
- OPENSSL_strncasecmp                     5557	3_0_3	EXIST::FUNCTION:
- OSSL_CMP_CTX_reset_geninfo_ITAVs        5558	3_0_8	EXIST::FUNCTION:CMP
+ BN_are_coprime                          5564	3_1_0	EXIST::FUNCTION:
+ OSSL_CMP_MSG_update_recipNonce          5565	3_0_9	EXIST::FUNCTION:CMP
  ossl_safe_getenv                        ?	3_0_0	EXIST::FUNCTION:
 +ossl_ctx_legacy_digest_signatures_allowed ?	3_0_1	EXIST::FUNCTION:
 +ossl_ctx_legacy_digest_signatures_allowed_set ?	3_0_1	EXIST::FUNCTION:

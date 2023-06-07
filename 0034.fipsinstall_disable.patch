@@ -164,7 +164,7 @@ diff -up openssl-3.0.0/doc/man7/OSSL_PROVIDER-FIPS.pod.xxx openssl-3.0.0/doc/man
 diff -up openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in
 --- openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac	2022-01-11 13:26:33.279906225 +0100
 +++ openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in	2022-01-11 13:33:18.757994419 +0100
-@@ -8,236 +8,11 @@ openssl-fipsinstall - perform FIPS confi
+@@ -8,275 +8,9 @@ openssl-fipsinstall - perform FIPS confi
  =head1 SYNOPSIS
  
  B<openssl fipsinstall>
@@ -179,14 +179,18 @@ diff -up openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac openssl-3.
 -[B<-macopt> I<nm>:I<v>]
 -[B<-noout>]
 -[B<-quiet>]
+-[B<-pedantic>]
 -[B<-no_conditional_errors>]
 -[B<-no_security_checks>]
+-[B<-ems_check>]
+-[B<-no_drbg_truncated_digests>]
 -[B<-self_test_onload>]
+-[B<-self_test_oninstall>]
 -[B<-corrupt_desc> I<selftest_description>]
 -[B<-corrupt_type> I<selftest_type>]
 -[B<-config> I<parent_config>]
- 
- =head1 DESCRIPTION
+-
+-=head1 DESCRIPTION
 -
 -This command is used to generate a FIPS module configuration file.
 -This configuration file can be used each time a FIPS module is loaded
@@ -315,6 +319,14 @@ diff -up openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac openssl-3.
 -
 -Disable logging of the self tests.
 -
+-=item B<-pedantic>
+-
+-Configure the module so that it is strictly FIPS compliant rather
+-than being backwards compatible.  This enables conditional errors,
+-security checks etc.  Note that any previous configuration options will
+-be overwritten and any subsequent configuration options that violate
+-FIPS compliance will result in an error.
+-
 -=item B<-no_conditional_errors>
 -
 -Configure the module to not enter an error state if a conditional self test
@@ -323,6 +335,20 @@ diff -up openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac openssl-3.
 -=item B<-no_security_checks>
 -
 -Configure the module to not perform run-time security checks as described above.
+-
+-Enabling the configuration option "no-fips-securitychecks" provides another way to
+-turn off the check at compile time.
+-
+-=item B<-ems_check>
+-
+-Configure the module to enable a run-time Extended Master Secret (EMS) check
+-when using the TLS1_PRF KDF algorithm. This check is disabled by default.
+-See RFC 7627 for information related to EMS.
+-
+-=item B<-no_drbg_truncated_digests>
+-
+-Configure the module to not allow truncated digests to be used with Hash and
+-HMAC DRBGs.  See FIPS 140-3 IG D.R for details.
 -
 -=item B<-self_test_onload>
 -
@@ -333,6 +359,14 @@ diff -up openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac openssl-3.
 -target machine. Once the self tests have run on the target machine the user
 -could possibly then add the 2 fields into the configuration using some other
 -mechanism.
+-
+-This is the default.
+-
+-=item B<-self_test_oninstall>
+-
+-The converse of B<-self_test_oninstall>.  The two fields related to the
+-"test status indicator" and "MAC status indicator" are written to the
+-output configuration file.
 -
 -=item B<-quiet>
 -
@@ -368,6 +402,11 @@ diff -up openssl-3.0.1/doc/man1/openssl-fipsinstall.pod.in.embed-hmac openssl-3.
 -test output and the options B<-corrupt_desc> and B<-corrupt_type> will be ignored.
 -For normal usage the base configuration file should use the default provider
 -when generating the fips configuration file.
+-
+-The B<-self_test_oninstall> option was added and the
+-B<-self_test_onload> option was made the default in OpenSSL 3.1.
+-
+-The command and all remaining options were added in OpenSSL 3.0.
 -
 -=head1 EXAMPLES
 -
