@@ -372,14 +372,17 @@ diff -up openssl-3.0.1/test/recipes/80-test_cms.t.fipsmin3 openssl-3.0.1/test/re
 diff -up openssl-3.0.1/test/recipes/30-test_evp.t.fipsmin3 openssl-3.0.1/test/recipes/30-test_evp.t
 --- openssl-3.0.1/test/recipes/30-test_evp.t.fipsmin3	2022-05-05 14:43:04.276857033 +0200
 +++ openssl-3.0.1/test/recipes/30-test_evp.t	2022-05-05 14:43:35.975138234 +0200
-@@ -43,7 +43,6 @@ my @files = qw(
+@@ -43,10 +43,8 @@ my @files = qw(
                  evpciph_aes_cts.txt
                  evpciph_aes_wrap.txt
                  evpciph_aes_stitched.txt
 -                evpciph_des3_common.txt
                  evpkdf_hkdf.txt
                  evpkdf_kbkdf_counter.txt
-                 evpkdf_kbkdf_kmac.txt
+-                evpkdf_kbkdf_kmac.txt
+                 evpkdf_pbkdf1.txt
+                 evpkdf_pbkdf2.txt
+                 evpkdf_ss.txt
 @@ -66,12 +65,6 @@ push @files, qw(
                  evppkey_dh.txt
                 ) unless $no_dh;
@@ -393,11 +396,12 @@ diff -up openssl-3.0.1/test/recipes/30-test_evp.t.fipsmin3 openssl-3.0.1/test/re
                  evppkey_ecc.txt
                  evppkey_ecdh.txt
                  evppkey_ecdsa.txt
-@@ -91,6 +84,7 @@ my @defltfiles = qw(
+@@ -91,6 +84,8 @@ my @defltfiles = qw(
                       evpciph_cast5.txt
                       evpciph_chacha.txt
                       evpciph_des.txt
 +                     evpciph_des3_common.txt
++                     evpkdf_kbkdf_kmac.txt
                       evpciph_idea.txt
                       evpciph_rc2.txt
                       evpciph_rc4.txt
