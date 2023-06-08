@@ -75,7 +75,7 @@ index db1a1d7bc3..c94c3c53bd 100644
              } else {
                  /* legacy engine support : remove the mark when this is deleted */
                  ctx->reqdigest = ctx->digest = EVP_get_digestbyname(mdname);
-@@ -318,11 +326,13 @@ static int do_sigver_init(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
+@@ -318,6 +326,7 @@ static int do_sigver_init(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
                      ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
                      goto err;
                  }
@@ -83,20 +83,6 @@ index db1a1d7bc3..c94c3c53bd 100644
              }
              (void)ERR_pop_to_mark();
          }
-     }
- 
-+#ifndef FIPS_MODULE
-     if (ctx->reqdigest != NULL
-             && !EVP_PKEY_is_a(locpctx->pkey, SN_hmac)
-             && !EVP_PKEY_is_a(locpctx->pkey, SN_tls1_prf)
-@@ -334,6 +344,7 @@ static int do_sigver_init(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
-             }
-         }
-     }
-+#endif /* !defined(FIPS_MODULE) */
- 
-     if (ver) {
-         if (signature->digest_verify_init == NULL) {
 @@ -366,6 +377,7 @@ static int do_sigver_init(EVP_MD_CTX *ctx, EVP_PKEY_CTX **pctx,
      EVP_KEYMGMT_free(tmp_keymgmt);
      return 0;

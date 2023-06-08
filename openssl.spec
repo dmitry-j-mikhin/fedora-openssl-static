@@ -93,7 +93,10 @@ Patch47: 0047-FIPS-early-KATS.patch
 Patch49: 0049-Selectively-disallow-SHA1-signatures.patch
 %else
 # Selectively disallow SHA1 signatures rhbz#2070977
-Patch49: 0049-Allow-disabling-of-SHA1-signatures.patch
+#XXX add OSSL_LIB_CTX_LEGACY_DIGEST_SIGNATURES to ossl_lib_ctx_get_data
+# To be reimplemented
+# See also https://github.com/openssl/openssl/pull/17881
+#Patch49: 0049-Allow-disabling-of-SHA1-signatures.patch
 %endif
 # Backport of patch for RHEL for Edge rhbz #2027261
 # To be removed
@@ -102,14 +105,16 @@ Patch49: 0049-Allow-disabling-of-SHA1-signatures.patch
 # Allow SHA1 in seclevel 2 if rh-allow-sha1-signatures = yes
 Patch52: 0052-Allow-SHA1-in-seclevel-2-if-rh-allow-sha1-signatures.patch
 %else
+# To be reimplemented
 # Support SHA1 in TLS in LEGACY crypto-policy (which is SECLEVEL=1)
-Patch52: 0052-Allow-SHA1-in-seclevel-1-if-rh-allow-sha1-signatures.patch
+# Patch52: 0052-Allow-SHA1-in-seclevel-1-if-rh-allow-sha1-signatures.patch
 %endif
 %if 0%{?rhel}
 # no USDT probe instrumentation required
 %else
+# To be reimplemented
 # Instrument with USDT probes related to SHA-1 deprecation
-Patch53: 0053-Add-SHA1-probes.patch
+# Patch53: 0053-Add-SHA1-probes.patch
 %endif
 # https://github.com/openssl/openssl/pull/18103
 # The patch is incorporated in 3.0.3 but we provide this function since 3.0.1
@@ -123,8 +128,9 @@ Patch58: 0058-FIPS-limit-rsa-encrypt.patch
 # This patch to be removed
 # Tests for 384/521 curves TBD
 # Patch60: 0060-FIPS-KAT-signature-tests.patch
+# To be reimplemented
 # https://bugzilla.redhat.com/show_bug.cgi?id=2087147
-Patch61: 0061-Deny-SHA-1-signature-verification-in-FIPS-provider.patch
+# Patch61: 0061-Deny-SHA-1-signature-verification-in-FIPS-provider.patch
 Patch62: 0062-fips-Expose-a-FIPS-indicator.patch
 # https://github.com/openssl/openssl/commit/44a563dde1584cd9284e80b6e45ee5019be8d36c
 # https://github.com/openssl/openssl/commit/345c99b6654b8313c792d54f829943068911ddbd
@@ -336,7 +342,7 @@ export OPENSSL_ENABLE_SHA1_SIGNATURES
 OPENSSL_SYSTEM_CIPHERS_OVERRIDE=xyz_nonexistent_file
 export OPENSSL_SYSTEM_CIPHERS_OVERRIDE
 #embed HMAC into fips provider for test run
-LD_LIBRARY_PATH=. apps/openssl dgst -binary -sha256 -mac HMAC -macopt hexkey:f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813 < providers/fips.so > providers/fips.so.hmac
+OPENSSL_CONF=/dev/null LD_LIBRARY_PATH=. apps/openssl dgst -binary -sha256 -mac HMAC -macopt hexkey:f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813 < providers/fips.so > providers/fips.so.hmac
 objcopy --update-section .rodata1=providers/fips.so.hmac providers/fips.so providers/fips.so.mac
 mv providers/fips.so.mac providers/fips.so
 #run tests itself
@@ -349,7 +355,7 @@ make test HARNESS_JOBS=8
     %{?__debug_package:%{__debug_install_post}} \
     %{__arch_install_post} \
     %{__os_install_post} \
-    LD_LIBRARY_PATH=. apps/openssl dgst -binary -sha256 -mac HMAC -macopt hexkey:f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813 < $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so > $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so.hmac \
+    OPENSSL_CONF=/dev/null LD_LIBRARY_PATH=. apps/openssl dgst -binary -sha256 -mac HMAC -macopt hexkey:f4556650ac31d35461610bac4ed81b1a181b2d8a43ea2854cbae22ca74560813 < $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so > $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so.hmac \
     objcopy --update-section .rodata1=$RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so.hmac $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so.mac \
     mv $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so.mac $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so \
     rm $RPM_BUILD_ROOT%{_libdir}/ossl-modules/fips.so.hmac \
