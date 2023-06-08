@@ -18,15 +18,12 @@ diff -up openssl-3.0.1/crypto/provider_conf.c.fipsact openssl-3.0.1/crypto/provi
  
          if (ok) {
              if (!ossl_provider_activate(prov, 1, 0)) {
-@@ -306,6 +317,19 @@ static int provider_conf_init(CONF_IMODU
+@@ -306,6 +317,16 @@ static int provider_conf_init(CONF_IMODU
              return 0;
      }
  
 +    if (ossl_get_kernel_fips_flag() != 0) { /* XXX from provider_conf_load */
 +        OSSL_LIB_CTX *libctx = NCONF_get0_libctx((CONF *)cnf);
-+        PROVIDER_CONF_GLOBAL *pcgbl
-+            = ossl_lib_ctx_get_data(libctx, OSSL_LIB_CTX_PROVIDER_CONF_INDEX,
-+                                    &provider_conf_ossl_ctx_method);
 +        if (provider_conf_activate(libctx, "fips", NULL, NULL, 0, NULL) != 1)
 +            return 0;
 +        if (provider_conf_activate(libctx, "base", NULL, NULL, 0, NULL) != 1)
