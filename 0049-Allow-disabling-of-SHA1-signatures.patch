@@ -1,44 +1,13 @@
-From 51d52096122cc73413d55aac06d5e0641f58ffcb Mon Sep 17 00:00:00 2001
-From: Clemens Lang <cllang@redhat.com>
-Date: Mon, 21 Feb 2022 17:24:44 +0100
-Subject: [PATCH] Allow disabling of SHA1 signatures
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+From 2e8388e06eafb703aeb315498915bf079561bdb5 Mon Sep 17 00:00:00 2001
+From: Dmitry Belyavskiy <dbelyavs@redhat.com>
+Date: Mon, 21 Aug 2023 13:07:07 +0200
+Subject: [PATCH 23/48] 0049-Allow-disabling-of-SHA1-signatures.patch
 
-NOTE: This patch is ported from CentOS 9 / RHEL 9, where it defaults to
-denying SHA1 signatures. On Fedora, the default is – for now – to allow
-SHA1 signatures.
-
-In order to phase out SHA1 signatures, introduce a new configuration
-option in the alg_section named 'rh-allow-sha1-signatures'. This option
-defaults to true. If set to false, any signature creation or
-verification operations that involve SHA1 as digest will fail.
-
-This also affects TLS, where the signature_algorithms extension of any
-ClientHello message sent by OpenSSL will no longer include signatures
-with the SHA1 digest if rh-allow-sha1-signatures is false. For servers
-that request a client certificate, the same also applies for
-CertificateRequest messages sent by them.
-
-For signatures created using the EVP_PKEY API, this is a best-effort
-check that will deny signatures in cases where the digest algorithm is
-known. This means, for example, that that following steps will still
-work:
-
- $> openssl dgst -sha1 -binary -out sha1 infile
- $> openssl pkeyutl -inkey key.pem -sign -in sha1 -out sha1sig
- $> openssl pkeyutl -inkey key.pem -verify -sigfile sha1sig -in sha1
-
-whereas these will not:
-
- $> openssl dgst -sha1 -binary -out sha1 infile
- $> openssl pkeyutl -inkey kem.pem -sign -in sha1 -out sha1sig -pkeyopt digest:sha1
- $> openssl pkeyutl -inkey kem.pem -verify -sigfile sha1sig -in sha1 -pkeyopt digest:sha1
-
-This happens because in the first case, OpenSSL's signature
-implementation does not know that it is signing a SHA1 hash (it could be
-signing arbitrary data).
+Patch-name: 0049-Allow-disabling-of-SHA1-signatures.patch
+Patch-id: 49
+Patch-status: |
+    # Selectively disallow SHA1 signatures rhbz#2070977
+From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
  crypto/context.c                              | 14 ++++
  crypto/evp/evp_cnf.c                          | 13 +++
@@ -58,10 +27,10 @@ signing arbitrary data).
  15 files changed, 209 insertions(+), 9 deletions(-)
 
 diff --git a/crypto/context.c b/crypto/context.c
-index e294ea1512..ab6abf44ab 100644
+index 51002ba79a..e697974c9d 100644
 --- a/crypto/context.c
 +++ b/crypto/context.c
-@@ -43,6 +43,8 @@ struct ossl_lib_ctx_st {
+@@ -78,6 +78,8 @@ struct ossl_lib_ctx_st {
      void *fips_prov;
  #endif
  
@@ -70,7 +39,7 @@ index e294ea1512..ab6abf44ab 100644
      unsigned int ischild:1;
  };
  
-@@ -171,6 +173,10 @@ static int context_init(OSSL_LIB_CTX *ctx)
+@@ -206,6 +208,10 @@ static int context_init(OSSL_LIB_CTX *ctx)
          goto err;
  #endif
  
@@ -81,7 +50,7 @@ index e294ea1512..ab6abf44ab 100644
      /* Low priority. */
  #ifndef FIPS_MODULE
      ctx->child_provider = ossl_child_prov_ctx_new(ctx);
-@@ -299,6 +305,11 @@ static void context_deinit_objs(OSSL_LIB_CTX *ctx)
+@@ -334,6 +340,11 @@ static void context_deinit_objs(OSSL_LIB_CTX *ctx)
      }
  #endif
  
@@ -93,7 +62,7 @@ index e294ea1512..ab6abf44ab 100644
      /* Low priority. */
  #ifndef FIPS_MODULE
      if (ctx->child_provider != NULL) {
-@@ -589,6 +600,9 @@ void *ossl_lib_ctx_get_data(OSSL_LIB_CTX *ctx, int index)
+@@ -625,6 +636,9 @@ void *ossl_lib_ctx_get_data(OSSL_LIB_CTX *ctx, int index)
          return ctx->fips_prov;
  #endif
  
@@ -265,10 +234,10 @@ index ce6e1a1ccb..003926247b 100644
          return EVP_PKEY_CTX_ctrl(ctx, -1, op, ctrl, 0, (void *)(md));
  
 diff --git a/doc/man5/config.pod b/doc/man5/config.pod
-index 8d312c661f..979683e0a5 100644
+index bd05736220..ed34ff4b9c 100644
 --- a/doc/man5/config.pod
 +++ b/doc/man5/config.pod
-@@ -296,6 +296,19 @@ Within the algorithm properties section, the following names have meaning:
+@@ -304,6 +304,19 @@ Within the algorithm properties section, the following names have meaning:
  The value may be anything that is acceptable as a property query
  string for EVP_set_default_properties().
  
@@ -433,7 +402,7 @@ index 70d0ea5d24..3c482e0181 100644
          if (md == NULL || md_nid < 0) {
              if (md == NULL)
 diff --git a/providers/implementations/signature/ecdsa_sig.c b/providers/implementations/signature/ecdsa_sig.c
-index 865d49d100..99b228e82c 100644
+index ebeb30e002..c874f87bd5 100644
 --- a/providers/implementations/signature/ecdsa_sig.c
 +++ b/providers/implementations/signature/ecdsa_sig.c
 @@ -237,7 +237,11 @@ static int ecdsa_setup_md(PROV_ECDSA_CTX *ctx, const char *mdname,
@@ -449,7 +418,7 @@ index 865d49d100..99b228e82c 100644
                                                      sha1_allowed);
      if (md_nid < 0) {
 diff --git a/providers/implementations/signature/rsa_sig.c b/providers/implementations/signature/rsa_sig.c
-index cd5de6bd51..25a51df878 100644
+index 2a5504d104..5f3a029566 100644
 --- a/providers/implementations/signature/rsa_sig.c
 +++ b/providers/implementations/signature/rsa_sig.c
 @@ -25,6 +25,7 @@
@@ -466,7 +435,7 @@ index cd5de6bd51..25a51df878 100644
  #define RSA_DEFAULT_DIGEST_NAME OSSL_DIGEST_NAME_SHA1
 +#define RSA_DEFAULT_DIGEST_NAME_NONLEGACY OSSL_DIGEST_NAME_SHA2_256
  
- static OSSL_FUNC_signature_newctx_fn rsa_newctx;
+ OSSL_FUNC_signature_newctx_fn rsa_newctx;
  static OSSL_FUNC_signature_sign_init_fn rsa_sign_init;
 @@ -302,10 +304,15 @@ static int rsa_setup_md(PROV_RSA_CTX *ctx, const char *mdname,
  
@@ -486,7 +455,7 @@ index cd5de6bd51..25a51df878 100644
  
          if (md == NULL
              || md_nid <= 0
-@@ -1370,8 +1377,15 @@ static int rsa_set_ctx_params(void *vprsactx, const OSSL_PARAM params[])
+@@ -1396,8 +1403,15 @@ static int rsa_set_ctx_params(void *vprsactx, const OSSL_PARAM params[])
      prsactx->pad_mode = pad_mode;
  
      if (prsactx->md == NULL && pmdname == NULL
@@ -552,5 +521,5 @@ index 9cb8a4dda2..feb660d030 100644
 +ossl_ctx_legacy_digest_signatures_allowed ?	3_0_1	EXIST::FUNCTION:
 +ossl_ctx_legacy_digest_signatures_allowed_set ?	3_0_1	EXIST::FUNCTION:
 -- 
-2.40.1
+2.41.0
 

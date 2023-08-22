@@ -1,20 +1,19 @@
-From 8da97ba910507ea36fecd374ab896f80d150a7e7 Mon Sep 17 00:00:00 2001
-From: rpm-build <rpm-build>
-Date: Mon, 31 Jul 2023 09:41:28 +0200
-Subject: [PATCH 21/35] 0045-FIPS-services-minimize.patch
+From a9dc983f82cabe29d6b48f3af3e30e26074ce5cf Mon Sep 17 00:00:00 2001
+From: Dmitry Belyavskiy <dbelyavs@redhat.com>
+Date: Mon, 21 Aug 2023 12:55:57 +0200
+Subject: [PATCH 21/48] 0045-FIPS-services-minimize.patch
 
 Patch-name: 0045-FIPS-services-minimize.patch
 Patch-id: 45
 Patch-status: |
     # Minimize fips services
-From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
- apps/ecparam.c                                |  3 ++
+ apps/ecparam.c                                |  7 +++
  apps/req.c                                    |  2 +-
  providers/common/capabilities.c               |  2 +-
- providers/fips/fipsprov.c                     | 45 +++++++++++--------
- providers/fips/self_test_data.inc             | 12 +++--
- providers/implementations/signature/rsa_sig.c | 13 ++++++
+ providers/fips/fipsprov.c                     | 44 +++++++++++--------
+ providers/fips/self_test_data.inc             |  9 +++-
+ providers/implementations/signature/rsa_sig.c | 26 +++++++++++
  ssl/ssl_ciph.c                                |  3 ++
  test/acvp_test.c                              |  2 +
  test/endecode_test.c                          |  4 ++
@@ -22,20 +21,24 @@ From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
  test/recipes/15-test_gendsa.t                 |  2 +-
  test/recipes/20-test_cli_fips.t               |  3 +-
  test/recipes/30-test_evp.t                    | 16 +++----
- .../30-test_evp_data/evpmac_common.txt        | 22 +++++++++
- test/recipes/80-test_cms.t                    | 22 ++++-----
+ .../30-test_evp_data/evpmac_common.txt        | 22 ++++++++++
+ test/recipes/80-test_cms.t                    | 22 +++++-----
  test/recipes/80-test_ssl_old.t                |  2 +-
- 16 files changed, 112 insertions(+), 50 deletions(-)
+ 16 files changed, 128 insertions(+), 47 deletions(-)
 
 diff --git a/apps/ecparam.c b/apps/ecparam.c
-index 9e9ad13683..fc125a45c9 100644
+index 9e9ad13683..9c66cf2434 100644
 --- a/apps/ecparam.c
 +++ b/apps/ecparam.c
-@@ -79,6 +79,9 @@ static int list_builtin_curves(BIO *out)
+@@ -79,6 +79,13 @@ static int list_builtin_curves(BIO *out)
          const char *comment = curves[n].comment;
          const char *sname = OBJ_nid2sn(curves[n].nid);
  
-+        if ((curves[n].nid == NID_secp256k1) && EVP_default_properties_is_fips_enabled(NULL))
++        if (((curves[n].nid == NID_secp256k1) || (curves[n].nid == NID_brainpoolP256r1)
++            || (curves[n].nid == NID_brainpoolP256t1) || (curves[n].nid == NID_brainpoolP320r1)
++            || (curves[n].nid == NID_brainpoolP320t1) || (curves[n].nid == NID_brainpoolP384r1)
++            || (curves[n].nid == NID_brainpoolP384t1) || (curves[n].nid == NID_brainpoolP512r1)
++            || (curves[n].nid == NID_brainpoolP512t1)) && EVP_default_properties_is_fips_enabled(NULL))
 +            continue;
 +
          if (comment == NULL)
@@ -70,7 +73,7 @@ index ed37e76969..eb836dfa6a 100644
  # ifndef OPENSSL_NO_DH
      /* Security bit values for FFDHE groups are as per RFC 7919 */
 diff --git a/providers/fips/fipsprov.c b/providers/fips/fipsprov.c
-index 518226dfc6..73bb96dece 100644
+index 518226dfc6..29438faea8 100644
 --- a/providers/fips/fipsprov.c
 +++ b/providers/fips/fipsprov.c
 @@ -199,13 +199,13 @@ static int fips_get_params(void *provctx, OSSL_PARAM params[])
@@ -111,8 +114,8 @@ index 518226dfc6..73bb96dece 100644
 -    UNAPPROVED_ALG(PROV_NAMES_DES_EDE3_ECB, ossl_tdes_ede3_ecb_functions),
 -    UNAPPROVED_ALG(PROV_NAMES_DES_EDE3_CBC, ossl_tdes_ede3_cbc_functions),
 +    /* We don't certify 3DES in our FIPS provider */
-+    /* ALG(PROV_NAMES_DES_EDE3_ECB, ossl_tdes_ede3_ecb_functions),
-+    ALG(PROV_NAMES_DES_EDE3_CBC, ossl_tdes_ede3_cbc_functions), */
++    /* UNAPPROVED_ALG(PROV_NAMES_DES_EDE3_ECB, ossl_tdes_ede3_ecb_functions),
++    UNAPPROVED_ALG(PROV_NAMES_DES_EDE3_CBC, ossl_tdes_ede3_cbc_functions), */
  #endif  /* OPENSSL_NO_DES */
      { { NULL, NULL, NULL }, NULL }
  };
@@ -140,7 +143,7 @@ index 518226dfc6..73bb96dece 100644
  #endif
      { PROV_NAMES_TLS1_PRF, FIPS_DEFAULT_PROPERTIES,
        ossl_kdf_tls1_prf_keyexch_functions },
-@@ -420,13 +424,14 @@ static const OSSL_ALGORITHM fips_keyexch[] = {
+@@ -420,13 +424,15 @@ static const OSSL_ALGORITHM fips_keyexch[] = {
  
  static const OSSL_ALGORITHM fips_signature[] = {
  #ifndef OPENSSL_NO_DSA
@@ -151,15 +154,15 @@ index 518226dfc6..73bb96dece 100644
      { PROV_NAMES_RSA, FIPS_DEFAULT_PROPERTIES, ossl_rsa_signature_functions },
  #ifndef OPENSSL_NO_EC
 -    { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
--      ossl_ed25519_signature_functions },
--    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions },
 +    /* We don't certify Edwards curves in our FIPS provider */
-+    /* { PROV_NAMES_ED25519, FIPS_DEFAULT_PROPERTIES, ossl_ed25519_signature_functions },
-+    { PROV_NAMES_ED448, FIPS_DEFAULT_PROPERTIES, ossl_ed448_signature_functions }, */
++    /* { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
+       ossl_ed25519_signature_functions },
+-    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions },
++    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions }, */
      { PROV_NAMES_ECDSA, FIPS_DEFAULT_PROPERTIES, ossl_ecdsa_signature_functions },
  #endif
      { PROV_NAMES_HMAC, FIPS_DEFAULT_PROPERTIES,
-@@ -456,8 +461,9 @@ static const OSSL_ALGORITHM fips_keymgmt[] = {
+@@ -456,8 +462,9 @@ static const OSSL_ALGORITHM fips_keymgmt[] = {
        PROV_DESCS_DHX },
  #endif
  #ifndef OPENSSL_NO_DSA
@@ -171,7 +174,7 @@ index 518226dfc6..73bb96dece 100644
  #endif
      { PROV_NAMES_RSA, FIPS_DEFAULT_PROPERTIES, ossl_rsa_keymgmt_functions,
        PROV_DESCS_RSA },
-@@ -466,14 +472,15 @@ static const OSSL_ALGORITHM fips_keymgmt[] = {
+@@ -466,14 +473,15 @@ static const OSSL_ALGORITHM fips_keymgmt[] = {
  #ifndef OPENSSL_NO_EC
      { PROV_NAMES_EC, FIPS_DEFAULT_PROPERTIES, ossl_ec_keymgmt_functions,
        PROV_DESCS_EC },
@@ -190,7 +193,7 @@ index 518226dfc6..73bb96dece 100644
      { PROV_NAMES_TLS1_PRF, FIPS_DEFAULT_PROPERTIES, ossl_kdf_keymgmt_functions,
        PROV_DESCS_TLS1_PRF_SIGN },
 diff --git a/providers/fips/self_test_data.inc b/providers/fips/self_test_data.inc
-index 2057378d3d..e0fdc0daa4 100644
+index 2057378d3d..4b80bb70b9 100644
 --- a/providers/fips/self_test_data.inc
 +++ b/providers/fips/self_test_data.inc
 @@ -177,6 +177,7 @@ static const ST_KAT_DIGEST st_kat_digest_tests[] =
@@ -221,18 +224,15 @@ index 2057378d3d..e0fdc0daa4 100644
  static const unsigned char dsa_p[] = {
      0xa2, 0x9b, 0x88, 0x72, 0xce, 0x8b, 0x84, 0x23,
      0xb7, 0xd5, 0xd2, 0x1d, 0x4b, 0x02, 0xf5, 0x7e,
-@@ -1589,8 +1591,8 @@ static const ST_KAT_PARAM dsa_key[] = {
-     ST_KAT_PARAM_BIGNUM(OSSL_PKEY_PARAM_PRIV_KEY, dsa_priv),
+@@ -1590,6 +1592,7 @@ static const ST_KAT_PARAM dsa_key[] = {
      ST_KAT_PARAM_END()
  };
--#endif /* OPENSSL_NO_DSA */
--
+ #endif /* OPENSSL_NO_DSA */
 +#endif
-+#endif
+ 
  /* Hash DRBG inputs for signature KATs */
  static const unsigned char sig_kat_entropyin[] = {
-     0x06, 0x6d, 0xc8, 0xce, 0x75, 0xb2, 0x89, 0x66, 0xa6, 0x85, 0x16, 0x3f,
-@@ -1642,6 +1644,7 @@ static const ST_KAT_SIGN st_kat_sign_tests[] = {
+@@ -1642,6 +1645,7 @@ static const ST_KAT_SIGN st_kat_sign_tests[] = {
      },
  # endif
  #endif /* OPENSSL_NO_EC */
@@ -240,7 +240,7 @@ index 2057378d3d..e0fdc0daa4 100644
  #ifndef OPENSSL_NO_DSA
      {
          OSSL_SELF_TEST_DESC_SIGN_DSA,
-@@ -1654,6 +1657,7 @@ static const ST_KAT_SIGN st_kat_sign_tests[] = {
+@@ -1654,6 +1658,7 @@ static const ST_KAT_SIGN st_kat_sign_tests[] = {
          ITM(dsa_expected_sig)
      },
  #endif /* OPENSSL_NO_DSA */
@@ -249,10 +249,30 @@ index 2057378d3d..e0fdc0daa4 100644
  
  static const ST_KAT_ASYM_CIPHER st_kat_asym_cipher_tests[] = {
 diff --git a/providers/implementations/signature/rsa_sig.c b/providers/implementations/signature/rsa_sig.c
-index cd5de6bd51..07824e558c 100644
+index d4261e8f7d..2a5504d104 100644
 --- a/providers/implementations/signature/rsa_sig.c
 +++ b/providers/implementations/signature/rsa_sig.c
-@@ -777,6 +777,19 @@ static int rsa_verify(void *vprsactx, const unsigned char *sig, size_t siglen,
+@@ -689,6 +689,19 @@ static int rsa_verify_recover(void *vprsactx,
+ {
+     PROV_RSA_CTX *prsactx = (PROV_RSA_CTX *)vprsactx;
+     int ret;
++# ifdef FIPS_MODULE
++    size_t rsabits = RSA_bits(prsactx->rsa);
++
++    if (rsabits < 2048) {
++        if (rsabits != 1024
++            && rsabits != 1280
++            && rsabits != 1536
++            && rsabits != 1792) {
++            ERR_raise(ERR_LIB_FIPS, PROV_R_INVALID_KEY_LENGTH);
++            return 0;
++        }
++    }
++# endif
+ 
+     if (!ossl_prov_is_running())
+         return 0;
+@@ -777,6 +790,19 @@ static int rsa_verify(void *vprsactx, const unsigned char *sig, size_t siglen,
  {
      PROV_RSA_CTX *prsactx = (PROV_RSA_CTX *)vprsactx;
      size_t rslen;
@@ -401,7 +421,7 @@ index 6d3c5ba1bb..2ba47b5fca 100644
      subtest DSA => sub {
          my $testtext_prefix = 'DSA';
 diff --git a/test/recipes/30-test_evp.t b/test/recipes/30-test_evp.t
-index 9d7040ced2..3be2549cb5 100644
+index 9d7040ced2..f8beb538d4 100644
 --- a/test/recipes/30-test_evp.t
 +++ b/test/recipes/30-test_evp.t
 @@ -42,10 +42,8 @@ my @files = qw(
@@ -428,16 +448,20 @@ index 9d7040ced2..3be2549cb5 100644
  push @files, qw(
                  evppkey_ecc.txt
                  evppkey_ecdh.txt
-@@ -91,6 +83,8 @@ my @defltfiles = qw(
+@@ -91,6 +83,7 @@ my @defltfiles = qw(
                       evpciph_cast5.txt
                       evpciph_chacha.txt
                       evpciph_des.txt
 +                     evpciph_des3_common.txt
-+                     evpkdf_kbkdf_kmac.txt
                       evpciph_idea.txt
                       evpciph_rc2.txt
                       evpciph_rc4.txt
-@@ -118,6 +112,12 @@ my @defltfiles = qw(
+@@ -114,10 +107,17 @@ my @defltfiles = qw(
+                      evpmd_whirlpool.txt
+                      evppbe_scrypt.txt
+                      evppbe_pkcs12.txt
++                     evpkdf_kbkdf_kmac.txt
+                      evppkey_kdf_scrypt.txt
                       evppkey_kdf_tls1_prf.txt
                       evppkey_rsa.txt
                      );

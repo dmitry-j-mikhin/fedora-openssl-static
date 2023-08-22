@@ -1,7 +1,7 @@
-From 7a6ade7947ceea6ca367afa0427f61a9505e37a5 Mon Sep 17 00:00:00 2001
+From 56511d480823bedafce604374fa3b15d3b3ffd6b Mon Sep 17 00:00:00 2001
 From: rpm-build <rpm-build>
 Date: Mon, 31 Jul 2023 09:41:28 +0200
-Subject: [PATCH 26/35] 0058-FIPS-limit-rsa-encrypt.patch
+Subject: [PATCH 26/48] 0058-FIPS-limit-rsa-encrypt.patch
 
 Patch-name: 0058-FIPS-limit-rsa-encrypt.patch
 Patch-id: 58
@@ -31,7 +31,7 @@ index e534ad0a5f..c017c658e5 100644
  {
      int protect = 0;
 diff --git a/providers/implementations/asymciphers/rsa_enc.c b/providers/implementations/asymciphers/rsa_enc.c
-index d865968058..9cd8904131 100644
+index d865968058..872967bcb3 100644
 --- a/providers/implementations/asymciphers/rsa_enc.c
 +++ b/providers/implementations/asymciphers/rsa_enc.c
 @@ -132,6 +132,17 @@ static int rsa_decrypt_init(void *vprsactx, void *vrsa,
@@ -41,7 +41,7 @@ index d865968058..9cd8904131 100644
 +# ifdef FIPS_MODULE
 +static int fips_padding_allowed(const PROV_RSA_CTX *prsactx)
 +{
-+    if (prsactx->pad_mode == RSA_PKCS1_PADDING
++    if (prsactx->pad_mode == RSA_PKCS1_PADDING || prsactx->pad_mode == RSA_NO_PADDING
 +        || prsactx->pad_mode == RSA_PKCS1_WITH_TLS_PADDING)
 +        return 0;
 +

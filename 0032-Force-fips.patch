@@ -1,30 +1,30 @@
-From 8c6dffe2347fc801a2b285d79dd99b8739414bc3 Mon Sep 17 00:00:00 2001
-From: rpm-build <rpm-build>
-Date: Mon, 31 Jul 2023 09:41:28 +0200
-Subject: [PATCH 16/35] 0032-Force-fips.patch
+From 2c110cf5551a3869514e697d8dc06682b62ca57d Mon Sep 17 00:00:00 2001
+From: Dmitry Belyavskiy <dbelyavs@redhat.com>
+Date: Mon, 21 Aug 2023 11:59:02 +0200
+Subject: [PATCH 16/48] 0032-Force-fips.patch
 
 Patch-name: 0032-Force-fips.patch
 Patch-id: 32
 Patch-status: |
     # We load FIPS provider and set FIPS properties implicitly
-From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
- crypto/provider_conf.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ crypto/provider_conf.c | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
 
 diff --git a/crypto/provider_conf.c b/crypto/provider_conf.c
-index 058fb58837..ad0b29c954 100644
+index 058fb58837..5274265a70 100644
 --- a/crypto/provider_conf.c
 +++ b/crypto/provider_conf.c
-@@ -10,6 +10,7 @@
+@@ -10,6 +10,8 @@
  #include <string.h>
  #include <openssl/trace.h>
  #include <openssl/err.h>
 +#include <openssl/evp.h>
++#include <unistd.h>
  #include <openssl/conf.h>
  #include <openssl/safestack.h>
  #include <openssl/provider.h>
-@@ -169,7 +170,7 @@ static int provider_conf_activate(OSSL_LIB_CTX *libctx, const char *name,
+@@ -169,7 +171,7 @@ static int provider_conf_activate(OSSL_LIB_CTX *libctx, const char *name,
          if (path != NULL)
              ossl_provider_set_module_path(prov, path);
  
@@ -33,14 +33,28 @@ index 058fb58837..ad0b29c954 100644
  
          if (ok) {
              if (!ossl_provider_activate(prov, 1, 0)) {
-@@ -309,6 +310,16 @@ static int provider_conf_init(CONF_IMODULE *md, const CONF *cnf)
+@@ -309,6 +311,30 @@ static int provider_conf_init(CONF_IMODULE *md, const CONF *cnf)
              return 0;
      }
  
 +    if (ossl_get_kernel_fips_flag() != 0) { /* XXX from provider_conf_load */
 +        OSSL_LIB_CTX *libctx = NCONF_get0_libctx((CONF *)cnf);
-+        if (provider_conf_activate(libctx, "fips", NULL, NULL, 0, NULL) != 1)
-+            return 0;
++#  define FIPS_LOCAL_CONF           OPENSSLDIR "/fips_local.cnf"
++
++        if (access(FIPS_LOCAL_CONF, R_OK) == 0) {
++            CONF *fips_conf = NCONF_new_ex(libctx, NCONF_default());
++            if (NCONF_load(fips_conf, FIPS_LOCAL_CONF, NULL) <= 0)
++                return 0;
++
++            if (provider_conf_load(libctx, "fips", "fips_sect", fips_conf) != 1) {
++                NCONF_free(fips_conf);
++                return 0;
++            }
++            NCONF_free(fips_conf);
++        } else {
++            if (provider_conf_activate(libctx, "fips", NULL, NULL, 0, NULL) != 1)
++                return 0;
++        }
 +        if (provider_conf_activate(libctx, "base", NULL, NULL, 0, NULL) != 1)
 +            return 0;
 +        if (EVP_default_properties_enable_fips(libctx, 1) != 1)

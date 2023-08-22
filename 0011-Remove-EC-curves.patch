@@ -1,20 +1,19 @@
-From e65f698d59fc71300d3e49492f9ef899b7209e5f Mon Sep 17 00:00:00 2001
-From: rpm-build <rpm-build>
-Date: Mon, 31 Jul 2023 09:41:28 +0200
-Subject: [PATCH 11/35] 0011-Remove-EC-curves.patch
+From 4a275f852b61238161c053774736dc07b3ade200 Mon Sep 17 00:00:00 2001
+From: Dmitry Belyavskiy <dbelyavs@redhat.com>
+Date: Mon, 21 Aug 2023 11:46:40 +0200
+Subject: [PATCH 11/48] 0011-Remove-EC-curves.patch
 
 Patch-name: 0011-Remove-EC-curves.patch
 Patch-id: 11
 Patch-status: |
     # remove unsupported EC curves
-From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
  apps/speed.c                 |  8 +---
- crypto/evp/ec_support.c      | 76 ------------------------------------
- test/acvp_test.inc           |  9 -----
- test/ecdsatest.h             | 17 --------
- test/recipes/15-test_genec.t | 27 -------------
- 5 files changed, 1 insertion(+), 136 deletions(-)
+ crypto/evp/ec_support.c      | 87 ------------------------------------
+ test/acvp_test.inc           |  9 ----
+ test/ecdsatest.h             | 17 -------
+ test/recipes/15-test_genec.t | 27 -----------
+ 5 files changed, 1 insertion(+), 147 deletions(-)
 
 diff --git a/apps/speed.c b/apps/speed.c
 index cace25eda1..d527f12f18 100644
@@ -57,7 +56,7 @@ index cace25eda1..d527f12f18 100644
          {"nistp256", NID_X9_62_prime256v1, 256},
          {"nistp384", NID_secp384r1, 384},
 diff --git a/crypto/evp/ec_support.c b/crypto/evp/ec_support.c
-index 1ec10143d2..8fe774140f 100644
+index 1ec10143d2..82b95294b4 100644
 --- a/crypto/evp/ec_support.c
 +++ b/crypto/evp/ec_support.c
 @@ -20,89 +20,15 @@ typedef struct ec_name2nid_st {
@@ -159,6 +158,24 @@ index 1ec10143d2..8fe774140f 100644
  };
  
  const char *OSSL_EC_curve_nid2name(int nid)
+@@ -150,17 +74,6 @@ int ossl_ec_curve_name2nid(const char *name)
+ /* Functions to translate between common NIST curve names and NIDs */
+ 
+ static const EC_NAME2NID nist_curves[] = {
+-    {"B-163", NID_sect163r2},
+-    {"B-233", NID_sect233r1},
+-    {"B-283", NID_sect283r1},
+-    {"B-409", NID_sect409r1},
+-    {"B-571", NID_sect571r1},
+-    {"K-163", NID_sect163k1},
+-    {"K-233", NID_sect233k1},
+-    {"K-283", NID_sect283k1},
+-    {"K-409", NID_sect409k1},
+-    {"K-571", NID_sect571k1},
+-    {"P-192", NID_X9_62_prime192v1},
+     {"P-224", NID_secp224r1},
+     {"P-256", NID_X9_62_prime256v1},
+     {"P-384", NID_secp384r1},
 diff --git a/test/acvp_test.inc b/test/acvp_test.inc
 index ad11d3ae1e..894a0bff9d 100644
 --- a/test/acvp_test.inc

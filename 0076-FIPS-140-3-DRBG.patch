@@ -1,7 +1,7 @@
-From 4b59d71e276243615d8fcc65bab32d83e6a602ad Mon Sep 17 00:00:00 2001
+From 89c00cc67b9b34bc94f9dc3a9fce9374bbaade03 Mon Sep 17 00:00:00 2001
 From: rpm-build <rpm-build>
 Date: Mon, 31 Jul 2023 09:41:29 +0200
-Subject: [PATCH 32/35] 0076-FIPS-140-3-DRBG.patch
+Subject: [PATCH 32/48] 0076-FIPS-140-3-DRBG.patch
 
 Patch-name: 0076-FIPS-140-3-DRBG.patch
 Patch-id: 76
@@ -12,9 +12,10 @@ From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
  crypto/rand/prov_seed.c                       |  9 ++-
  providers/implementations/rands/crngt.c       |  6 +-
- providers/implementations/rands/drbg.c        |  3 +
+ providers/implementations/rands/drbg.c        | 11 +++-
+ providers/implementations/rands/drbg_local.h  |  2 +-
  .../implementations/rands/seeding/rand_unix.c | 64 ++-----------------
- 4 files changed, 20 insertions(+), 62 deletions(-)
+ 5 files changed, 28 insertions(+), 64 deletions(-)
 
 diff --git a/crypto/rand/prov_seed.c b/crypto/rand/prov_seed.c
 index 96c499c957..61c4cd8779 100644
@@ -54,7 +55,7 @@ index fa4a2db14a..1f13fc759e 100644
          bytes_needed = min_len;
      if (bytes_needed > max_len)
 diff --git a/providers/implementations/rands/drbg.c b/providers/implementations/rands/drbg.c
-index ea55363bf8..423bb91157 100644
+index ea55363bf8..1b2410b3db 100644
 --- a/providers/implementations/rands/drbg.c
 +++ b/providers/implementations/rands/drbg.c
 @@ -570,6 +570,9 @@ int ossl_prov_drbg_reseed(PROV_DRBG *drbg, int prediction_resistance,
@@ -67,6 +68,35 @@ index ea55363bf8..423bb91157 100644
      /* Reseed using our sources in addition */
      entropylen = get_entropy(drbg, &entropy, drbg->strength,
                               drbg->min_entropylen, drbg->max_entropylen,
+@@ -662,8 +665,14 @@ int ossl_prov_drbg_generate(PROV_DRBG *drbg, unsigned char *out, size_t outlen,
+             reseed_required = 1;
+     }
+     if (drbg->parent != NULL
+-            && get_parent_reseed_count(drbg) != drbg->parent_reseed_counter)
++            && get_parent_reseed_count(drbg) != drbg->parent_reseed_counter) {
++#ifdef FIPS_MODULE
++        /* Red Hat patches provide chain reseeding when necessary so just sync counters*/
++        drbg->parent_reseed_counter = get_parent_reseed_count(drbg);
++#else
+         reseed_required = 1;
++#endif
++        }
+ 
+     if (reseed_required || prediction_resistance) {
+         if (!ossl_prov_drbg_reseed(drbg, prediction_resistance, NULL, 0,
+diff --git a/providers/implementations/rands/drbg_local.h b/providers/implementations/rands/drbg_local.h
+index 3b5417b43b..d27c50950b 100644
+--- a/providers/implementations/rands/drbg_local.h
++++ b/providers/implementations/rands/drbg_local.h
+@@ -38,7 +38,7 @@
+  *
+  * The value is in bytes.
+  */
+-#define CRNGT_BUFSIZ    16
++#define CRNGT_BUFSIZ   32
+ 
+ /*
+  * Maximum input size for the DRBG (entropy, nonce, personalization string)
 diff --git a/providers/implementations/rands/seeding/rand_unix.c b/providers/implementations/rands/seeding/rand_unix.c
 index cd02a0236d..98c917b6d8 100644
 --- a/providers/implementations/rands/seeding/rand_unix.c
