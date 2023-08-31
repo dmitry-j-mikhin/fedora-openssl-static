@@ -6,8 +6,6 @@ Subject: [PATCH 26/48] 0058-FIPS-limit-rsa-encrypt.patch
 Patch-name: 0058-FIPS-limit-rsa-encrypt.patch
 Patch-id: 58
 Patch-status: |
-    # https://github.com/openssl/openssl/pull/18175
-    # Patch57: 0057-strcasecmp-fix.patch
     # https://bugzilla.redhat.com/show_bug.cgi?id=2053289
 From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
