@@ -1,13 +1,13 @@
-From a0d7a92474123c1fb11e13491d2d37f6c43321b0 Mon Sep 17 00:00:00 2001
+From a4ca1cac6b38efe0de1d8afb506cea29f8c60aec Mon Sep 17 00:00:00 2001
 From: rpm-build <rpm-build>
-Date: Mon, 31 Jul 2023 09:41:29 +0200
-Subject: [PATCH 35/48] 0079-RSA-PKCS15-implicit-rejection.patch
+Date: Thu, 19 Oct 2023 13:12:41 +0200
+Subject: [PATCH 34/46] 0079-RSA-PKCS15-implicit-rejection.patch
 
 Patch-name: 0079-RSA-PKCS15-implicit-rejection.patch
 Patch-id: 79
 Patch-status: |
-    # https://github.com/openssl/openssl/pull/13817
-From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
+    # # https://github.com/openssl/openssl/pull/13817
+From-dist-git-commit: 5c67b5adc311af297f425c09e3e1ac7ca8483911
 ---
  crypto/cms/cms_env.c                          |   7 +
  crypto/evp/ctrl_params_translate.c            |   6 +
@@ -30,10 +30,10 @@ From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
  18 files changed, 962 insertions(+), 8 deletions(-)
 
 diff --git a/crypto/cms/cms_env.c b/crypto/cms/cms_env.c
-index 3105d37726..58d44e1940 100644
+index 99cf1dcb39..730f638969 100644
 --- a/crypto/cms/cms_env.c
 +++ b/crypto/cms/cms_env.c
-@@ -571,6 +571,13 @@ static int cms_RecipientInfo_ktri_decrypt(CMS_ContentInfo *cms,
+@@ -590,6 +590,13 @@ static int cms_RecipientInfo_ktri_decrypt(CMS_ContentInfo *cms,
      if (!ossl_cms_env_asn1_ctrl(ri, 1))
          goto err;
  
@@ -48,12 +48,12 @@ index 3105d37726..58d44e1940 100644
                           ktri->encryptedKey->data,
                           ktri->encryptedKey->length) <= 0)
 diff --git a/crypto/evp/ctrl_params_translate.c b/crypto/evp/ctrl_params_translate.c
-index d6f8a10840..51f9a2da57 100644
+index 80947b0932..b10ba41e85 100644
 --- a/crypto/evp/ctrl_params_translate.c
 +++ b/crypto/evp/ctrl_params_translate.c
-@@ -2256,6 +2256,12 @@ static const struct translation_st evp_pkey_ctx_translations[] = {
+@@ -2265,6 +2265,12 @@ static const struct translation_st evp_pkey_ctx_translations[] = {
        EVP_PKEY_CTRL_GET_RSA_OAEP_LABEL, NULL, NULL,
-       OSSL_ASYM_CIPHER_PARAM_OAEP_LABEL, OSSL_PARAM_OCTET_STRING, NULL },
+       OSSL_ASYM_CIPHER_PARAM_OAEP_LABEL, OSSL_PARAM_OCTET_PTR, NULL },
  
 +    { SET, EVP_PKEY_RSA, 0, EVP_PKEY_OP_TYPE_CRYPT,
 +      EVP_PKEY_CTRL_RSA_IMPLICIT_REJECTION, NULL,
@@ -515,7 +515,7 @@ index 51507fc030..5cd2b26879 100644
   * ossl_rsa_padding_check_PKCS1_type_2_TLS() checks and removes the PKCS1 type 2
   * padding from a decrypted RSA message in a TLS signature. The result is stored
 diff --git a/crypto/rsa/rsa_pmeth.c b/crypto/rsa/rsa_pmeth.c
-index 44c819a5c3..6556a9ad28 100644
+index 0bf5ac098a..81b031f81b 100644
 --- a/crypto/rsa/rsa_pmeth.c
 +++ b/crypto/rsa/rsa_pmeth.c
 @@ -52,6 +52,8 @@ typedef struct {
@@ -565,7 +565,7 @@ index 44c819a5c3..6556a9ad28 100644
      }
      *outlen = constant_time_select_s(constant_time_msb_s(ret), *outlen, ret);
      ret = constant_time_select_int(constant_time_msb(ret), ret, 1);
-@@ -587,6 +597,14 @@ static int pkey_rsa_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
+@@ -591,6 +601,14 @@ static int pkey_rsa_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
          *(unsigned char **)p2 = rctx->oaep_label;
          return rctx->oaep_labellen;
  
@@ -614,7 +614,7 @@ index b0054ead66..dd87829798 100644
  
  =head1 RSA-PSS ALGORITHM
 diff --git a/doc/man1/openssl-rsautl.pod.in b/doc/man1/openssl-rsautl.pod.in
-index 186e49e5e4..eab34979de 100644
+index 0a32fd965b..4c462abc8c 100644
 --- a/doc/man1/openssl-rsautl.pod.in
 +++ b/doc/man1/openssl-rsautl.pod.in
 @@ -105,6 +105,11 @@ The padding to use: PKCS#1 v1.5 (the default), PKCS#1 OAEP,
@@ -762,10 +762,10 @@ index 949873d0ee..f267e5d9d1 100644
                                              size_t tlen,
                                              const unsigned char *from,
 diff --git a/include/openssl/core_names.h b/include/openssl/core_names.h
-index b431b9f871..f185bc9342 100644
+index 6248dda659..300d1129a4 100644
 --- a/include/openssl/core_names.h
 +++ b/include/openssl/core_names.h
-@@ -296,6 +296,7 @@ extern "C" {
+@@ -297,6 +297,7 @@ extern "C" {
  #define OSSL_PKEY_PARAM_DIST_ID             "distid"
  #define OSSL_PKEY_PARAM_PUB_KEY             "pub"
  #define OSSL_PKEY_PARAM_PRIV_KEY            "priv"
@@ -773,7 +773,7 @@ index b431b9f871..f185bc9342 100644
  
  /* Diffie-Hellman/DSA Parameters */
  #define OSSL_PKEY_PARAM_FFC_P               "p"
-@@ -472,6 +473,7 @@ extern "C" {
+@@ -473,6 +474,7 @@ extern "C" {
  #define OSSL_ASYM_CIPHER_PARAM_OAEP_LABEL               "oaep-label"
  #define OSSL_ASYM_CIPHER_PARAM_TLS_CLIENT_VERSION       "tls-client-version"
  #define OSSL_ASYM_CIPHER_PARAM_TLS_NEGOTIATED_VERSION   "tls-negotiated-version"

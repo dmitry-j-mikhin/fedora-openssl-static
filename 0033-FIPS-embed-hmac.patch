@@ -1,13 +1,13 @@
-From ed02a8b9e767224dc7512a4a176e4aae045b3573 Mon Sep 17 00:00:00 2001
+From e364a858262c8f563954544cc81e66f1b3b8db8c Mon Sep 17 00:00:00 2001
 From: rpm-build <rpm-build>
-Date: Mon, 31 Jul 2023 09:41:28 +0200
+Date: Thu, 19 Oct 2023 13:12:40 +0200
 Subject: [PATCH 16/46] 0033-FIPS-embed-hmac.patch
 
 Patch-name: 0033-FIPS-embed-hmac.patch
 Patch-id: 33
 Patch-status: |
-    # Embed HMAC into the fips.so
-From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
+    # # Embed HMAC into the fips.so
+From-dist-git-commit: 5c67b5adc311af297f425c09e3e1ac7ca8483911
 ---
  providers/fips/self_test.c            | 70 ++++++++++++++++++++++++---
  test/fipsmodule.cnf                   |  2 +
@@ -21,10 +21,10 @@ From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
  create mode 100644 test/fipsmodule.cnf
 
 diff --git a/providers/fips/self_test.c b/providers/fips/self_test.c
-index 10804d9f59..5e418a2c11 100644
+index b8dc9817b2..e3a629018a 100644
 --- a/providers/fips/self_test.c
 +++ b/providers/fips/self_test.c
-@@ -231,11 +231,27 @@ err:
+@@ -230,11 +230,27 @@ err:
      return ok;
  }
  
@@ -52,7 +52,7 @@ index 10804d9f59..5e418a2c11 100644
  static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex_cb,
                              unsigned char *expected, size_t expected_len,
                              OSSL_LIB_CTX *libctx, OSSL_SELF_TEST *ev,
-@@ -248,12 +264,23 @@ static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex
+@@ -247,12 +263,23 @@ static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex
      EVP_MAC *mac = NULL;
      EVP_MAC_CTX *ctx = NULL;
      OSSL_PARAM params[2], *p = params;
@@ -76,7 +76,7 @@ index 10804d9f59..5e418a2c11 100644
      mac = EVP_MAC_fetch(libctx, MAC_NAME, NULL);
      if (mac == NULL)
          goto err;
-@@ -267,13 +294,42 @@ static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex
+@@ -266,13 +293,42 @@ static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex
      if (!EVP_MAC_init(ctx, fixed_key, sizeof(fixed_key), params))
          goto err;
  
@@ -121,7 +121,7 @@ index 10804d9f59..5e418a2c11 100644
      if (!EVP_MAC_final(ctx, out, &out_len, sizeof(out)))
          goto err;
  
-@@ -283,6 +339,7 @@ static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex
+@@ -282,6 +338,7 @@ static int verify_integrity(OSSL_CORE_BIO *bio, OSSL_FUNC_BIO_read_ex_fn read_ex
          goto err;
      ret = 1;
  err:
@@ -129,8 +129,8 @@ index 10804d9f59..5e418a2c11 100644
      OSSL_SELF_TEST_onend(ev, ret);
      EVP_MAC_CTX_free(ctx);
      EVP_MAC_free(mac);
-@@ -349,8 +406,7 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
-         CRYPTO_THREAD_unlock(fips_state_lock);
+@@ -335,8 +392,7 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
+         return 0;
      }
  
 -    if (st == NULL
@@ -139,7 +139,7 @@ index 10804d9f59..5e418a2c11 100644
          ERR_raise(ERR_LIB_PROV, PROV_R_MISSING_CONFIG_DATA);
          goto end;
      }
-@@ -359,8 +415,9 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
+@@ -345,8 +401,9 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
      if (ev == NULL)
          goto end;
  
@@ -151,7 +151,7 @@ index 10804d9f59..5e418a2c11 100644
      if (module_checksum == NULL) {
          ERR_raise(ERR_LIB_PROV, PROV_R_INVALID_CONFIG_DATA);
          goto end;
-@@ -434,7 +491,6 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
+@@ -420,7 +477,6 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
  end:
      EVP_RAND_free(testrand);
      OSSL_SELF_TEST_free(ev);
@@ -207,12 +207,12 @@ index b8b136d110..8242f4ebc3 100644
  # Compatible options for pedantic FIPS compliance
  my @pedantic_okay =
 diff --git a/test/recipes/30-test_defltfips.t b/test/recipes/30-test_defltfips.t
-index 426bd660d1..6dc514936b 100644
+index c8f145405b..56a2ec5dc4 100644
 --- a/test/recipes/30-test_defltfips.t
 +++ b/test/recipes/30-test_defltfips.t
-@@ -21,7 +21,7 @@ BEGIN {
- use lib srctop_dir('Configurations');
- use lib bldtop_dir('.');
+@@ -24,7 +24,7 @@ use lib bldtop_dir('.');
+ plan skip_all => "Configuration loading is turned off"
+     if disabled("autoload-config");
  
 -my $no_fips = disabled('fips') || ($ENV{NO_FIPS} // 0);
 +my $no_fips = 1; #disabled('fips') || ($ENV{NO_FIPS} // 0);

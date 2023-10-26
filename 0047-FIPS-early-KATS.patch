@@ -1,22 +1,22 @@
-From 0242c0317b7c7874148c456aaab1e8eeb156d7c1 Mon Sep 17 00:00:00 2001
+From ba6e65e2f7e7fe8d9cd62e1e7e345bc41dda424f Mon Sep 17 00:00:00 2001
 From: rpm-build <rpm-build>
-Date: Mon, 31 Jul 2023 09:41:28 +0200
-Subject: [PATCH 22/35] 0047-FIPS-early-KATS.patch
+Date: Thu, 19 Oct 2023 13:12:40 +0200
+Subject: [PATCH 21/46] 0047-FIPS-early-KATS.patch
 
 Patch-name: 0047-FIPS-early-KATS.patch
 Patch-id: 47
 Patch-status: |
-    # Execute KATS before HMAC verification
-From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
+    # # Execute KATS before HMAC verification
+From-dist-git-commit: 5c67b5adc311af297f425c09e3e1ac7ca8483911
 ---
  providers/fips/self_test.c | 22 ++++++++++------------
  1 file changed, 10 insertions(+), 12 deletions(-)
 
 diff --git a/providers/fips/self_test.c b/providers/fips/self_test.c
-index ef56002854..062d9df84a 100644
+index e3a629018a..3c09bd8638 100644
 --- a/providers/fips/self_test.c
 +++ b/providers/fips/self_test.c
-@@ -414,6 +414,16 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
+@@ -401,6 +401,16 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
      if (ev == NULL)
          goto end;
  
@@ -33,7 +33,7 @@ index ef56002854..062d9df84a 100644
      module_checksum = fips_hmac_container;
      checksum_len = sizeof(fips_hmac_container);
  
-@@ -464,18 +474,6 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
+@@ -451,18 +461,6 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
          }
      }
  
@@ -50,8 +50,8 @@ index ef56002854..062d9df84a 100644
 -    }
 -
      /* Verify that the RNG has been restored properly */
-     testrand = EVP_RAND_fetch(st->libctx, "TEST-RAND", NULL);
-     if (testrand == NULL
+     rng = ossl_rand_get0_private_noncreating(st->libctx);
+     if (rng != NULL)
 -- 
 2.41.0
 
