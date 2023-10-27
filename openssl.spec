@@ -29,7 +29,7 @@ print(string.sub(hash, 0, 16))
 Summary: Utilities from the general purpose cryptography library with TLS implementation
 Name: openssl
 Version: 3.0.9
-Release: 2%{?dist}
+Release: 3%{?dist}
 Epoch: 1
 Source: openssl-%{version}.tar.gz
 Source2: Makefile.certificate
@@ -152,6 +152,7 @@ Patch78: 0078-Add-FIPS-indicator-parameter-to-HKDF.patch
 Patch79: 0079-Fix-AES-GCM-on-Power-8-CPUs.patch
 # https://github.com/openssl/openssl/pull/13817
 Patch100: 0100-RSA-PKCS15-implicit-rejection.patch
+Patch128: 0128-CVE-2023-5363.patch
 
 License: ASL 2.0
 URL: http://www.openssl.org/
@@ -483,6 +484,10 @@ install -m644 %{SOURCE9} \
 %ldconfig_scriptlets libs
 
 %changelog
+* Fri Oct 27 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-3
+- Fix incorrect cipher key and IV length processing
+  Resolves: CVE-2023-5363
+
 * Thu Jul 27 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-2
 - Forbid custom EC more completely
   Resolves: rhbz#2223953
