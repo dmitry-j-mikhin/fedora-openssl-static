@@ -15,7 +15,7 @@
 Summary: Utilities from the general purpose cryptography library with TLS implementation
 Name: openssl
 Version: 3.0.9
-Release: 1%{?dist}
+Release: 2%{?dist}
 Epoch: 1
 # We have to remove certain patented algorithms from the openssl source
 # tarball with the hobble-openssl script which is included below.
@@ -83,6 +83,7 @@ Patch53: 0053-Add-SHA1-probes.patch
 # The patch is incorporated in 3.0.3 but we provide this function since 3.0.1
 # so the patch should persist
 Patch56: 0056-strcasecmp.patch
+Patch128: 0128-CVE-2023-5363.patch
 
 License: ASL 2.0
 URL: http://www.openssl.org/
@@ -414,6 +415,10 @@ install -m644 %{SOURCE9} \
 %ldconfig_scriptlets libs
 
 %changelog
+* Fri Oct 27 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-2
+- Fix incorrect cipher key and IV length processing
+  Resolves: CVE-2023-5363
+
 * Wed May 31 2023 Dmitry Belyavskiy <dbelyavs@redhat.com> - 1:3.0.9-1
 - Rebase to upstream version 3.0.9
   Resolves: CVE-2023-0464
