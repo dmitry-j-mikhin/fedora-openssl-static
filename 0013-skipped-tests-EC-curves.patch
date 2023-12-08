@@ -39,7 +39,7 @@ index 631603df7c..4cb2ffebbc 100644
 +plan skip_all => 2 + ($no_fips ? 0 : 1); #fips test
  
  my @basic_cmd = ("cmp_protect_test",
-                  data_file("server.pem"),
+                  data_file("prot_RSA.pem"),
 diff --git a/test/recipes/65-test_cmp_vfy.t b/test/recipes/65-test_cmp_vfy.t
 index f722800e27..26a01786bb 100644
 --- a/test/recipes/65-test_cmp_vfy.t

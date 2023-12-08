@@ -59,7 +59,7 @@ index 1c15e32a5c..f2cedaf88d 100644
 +
  =head1 COPYRIGHT
  
- Copyright 2019-2022 The OpenSSL Project Authors. All Rights Reserved.
+ Copyright 2019-2021 The OpenSSL Project Authors. All Rights Reserved.
 diff --git a/include/openssl/fips_names.h b/include/openssl/fips_names.h
 index 5c77f6d691..8cdd5a6bf7 100644
 --- a/include/openssl/fips_names.h
@@ -88,9 +88,9 @@ index 0b6de603e2..26a69ca282 100644
       */
  # define SSL_OP_CRYPTOPRO_TLSEXT_BUG                     SSL_OP_BIT(31)
 +# define SSL_OP_RH_PERMIT_NOEMS_FIPS                     SSL_OP_BIT(48)
- 
  /*
-  * Option "collections."
+  * Disable RFC8879 certificate compression
+  * SSL_OP_NO_TX_CERTIFICATE_COMPRESSION: don't send compressed certificates,
 diff --git a/providers/fips/fipsprov.c b/providers/fips/fipsprov.c
 index 5ff9872bd8..eb9653a9df 100644
 --- a/providers/fips/fipsprov.c
@@ -169,12 +169,12 @@ index 00b1ee531e..22cdabb308 100644
  #define COOKIE_STATE_FORMAT_VERSION     1
  
 @@ -1552,8 +1553,13 @@ EXT_RETURN tls_construct_stoc_etm(SSL *s, WPACKET *pkt, unsigned int context,
- EXT_RETURN tls_construct_stoc_ems(SSL *s, WPACKET *pkt, unsigned int context,
+                                   unsigned int context,
                                    X509 *x, size_t chainidx)
  {
 -    if ((s->s3.flags & TLS1_FLAGS_RECEIVED_EXTMS) == 0)
 +    if ((s->s3.flags & TLS1_FLAGS_RECEIVED_EXTMS) == 0) {
-+        if (FIPS_mode() && !(SSL_get_options(s) & SSL_OP_RH_PERMIT_NOEMS_FIPS) ) {
++        if (FIPS_mode() && !(SSL_get_options(SSL_CONNECTION_GET_SSL(s)) & SSL_OP_RH_PERMIT_NOEMS_FIPS) ) {
 +            SSLfatal(s, SSL_AD_HANDSHAKE_FAILURE, ERR_R_UNSUPPORTED);
 +            return EXT_RETURN_FAIL;
 +        }
@@ -194,7 +194,7 @@ index 91238e6457..e8ad8ecd9e 100644
 +#include <openssl/fips.h>
  
  /* seed1 through seed5 are concatenated */
- static int tls1_PRF(SSL *s,
+ static int tls1_PRF(SSL_CONNECTION *s,
 @@ -75,8 +76,14 @@ static int tls1_PRF(SSL *s,
      }
  

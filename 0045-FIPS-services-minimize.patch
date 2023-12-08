@@ -56,7 +56,7 @@ index 23757044ab..5916914978 100644
 +    cipher = (EVP_CIPHER *)EVP_aes_256_cbc();
  #endif
  
-     prog = opt_init(argc, argv, req_options);
+     opt_set_unknown_name("digest");
 diff --git a/providers/common/capabilities.c b/providers/common/capabilities.c
 index ed37e76969..eb836dfa6a 100644
 --- a/providers/common/capabilities.c
@@ -69,9 +69,9 @@ index ed37e76969..eb836dfa6a 100644
      TLS_GROUP_ENTRY("x25519", "X25519", "X25519", 28),
      TLS_GROUP_ENTRY("x448", "X448", "X448", 29),
 +#  endif
- # endif /* OPENSSL_NO_EC */
- # ifndef OPENSSL_NO_DH
-     /* Security bit values for FFDHE groups are as per RFC 7919 */
+ #  ifndef FIPS_MODULE
+     TLS_GROUP_ENTRY("brainpoolP256r1tls13", "brainpoolP256r1", "EC", 30),
+     TLS_GROUP_ENTRY("brainpoolP384r1tls13", "brainpoolP384r1", "EC", 31),
 diff --git a/providers/fips/fipsprov.c b/providers/fips/fipsprov.c
 index 518226dfc6..29438faea8 100644
 --- a/providers/fips/fipsprov.c
@@ -132,36 +132,17 @@ index 518226dfc6..29438faea8 100644
  };
  
 @@ -409,8 +412,9 @@ static const OSSL_ALGORITHM fips_keyexch[] = {
- #endif
  #ifndef OPENSSL_NO_EC
      { PROV_NAMES_ECDH, FIPS_DEFAULT_PROPERTIES, ossl_ecdh_keyexch_functions },
+ # ifndef OPENSSL_NO_ECX
 -    { PROV_NAMES_X25519, FIPS_DEFAULT_PROPERTIES, ossl_x25519_keyexch_functions },
 -    { PROV_NAMES_X448, FIPS_DEFAULT_PROPERTIES, ossl_x448_keyexch_functions },
 +    /* We don't certify Edwards curves in our FIPS provider */
 +    /*{ PROV_NAMES_X25519, FIPS_DEFAULT_PROPERTIES, ossl_x25519_keyexch_functions },
 +    { PROV_NAMES_X448, FIPS_DEFAULT_PROPERTIES, ossl_x448_keyexch_functions },*/
+ # endif
  #endif
      { PROV_NAMES_TLS1_PRF, FIPS_DEFAULT_PROPERTIES,
-       ossl_kdf_tls1_prf_keyexch_functions },
-@@ -420,13 +424,15 @@ static const OSSL_ALGORITHM fips_keyexch[] = {
- 
- static const OSSL_ALGORITHM fips_signature[] = {
- #ifndef OPENSSL_NO_DSA
--    { PROV_NAMES_DSA, FIPS_DEFAULT_PROPERTIES, ossl_dsa_signature_functions },
-+    /* We don't certify DSA in our FIPS provider */
-+    /* { PROV_NAMES_DSA, FIPS_DEFAULT_PROPERTIES, ossl_dsa_signature_functions }, */
- #endif
-     { PROV_NAMES_RSA, FIPS_DEFAULT_PROPERTIES, ossl_rsa_signature_functions },
- #ifndef OPENSSL_NO_EC
--    { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
-+    /* We don't certify Edwards curves in our FIPS provider */
-+    /* { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
-       ossl_ed25519_signature_functions },
--    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions },
-+    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions }, */
-     { PROV_NAMES_ECDSA, FIPS_DEFAULT_PROPERTIES, ossl_ecdsa_signature_functions },
- #endif
-     { PROV_NAMES_HMAC, FIPS_DEFAULT_PROPERTIES,
 @@ -456,8 +462,9 @@ static const OSSL_ALGORITHM fips_keymgmt[] = {
        PROV_DESCS_DHX },
  #endif
@@ -175,9 +156,9 @@ index 518226dfc6..29438faea8 100644
      { PROV_NAMES_RSA, FIPS_DEFAULT_PROPERTIES, ossl_rsa_keymgmt_functions,
        PROV_DESCS_RSA },
 @@ -466,14 +473,15 @@ static const OSSL_ALGORITHM fips_keymgmt[] = {
- #ifndef OPENSSL_NO_EC
      { PROV_NAMES_EC, FIPS_DEFAULT_PROPERTIES, ossl_ec_keymgmt_functions,
        PROV_DESCS_EC },
+ # ifndef OPENSSL_NO_ECX
 -    { PROV_NAMES_X25519, FIPS_DEFAULT_PROPERTIES, ossl_x25519_keymgmt_functions,
 +    /* We don't certify Edwards curves in our FIPS provider */
 +    /* { PROV_NAMES_X25519, FIPS_DEFAULT_PROPERTIES, ossl_x25519_keymgmt_functions,
@@ -189,9 +170,9 @@ index 518226dfc6..29438faea8 100644
      { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_keymgmt_functions,
 -      PROV_DESCS_ED448 },
 +      PROV_DESCS_ED448 }, */
+ # endif
  #endif
      { PROV_NAMES_TLS1_PRF, FIPS_DEFAULT_PROPERTIES, ossl_kdf_keymgmt_functions,
-       PROV_DESCS_TLS1_PRF_SIGN },
 diff --git a/providers/fips/self_test_data.inc b/providers/fips/self_test_data.inc
 index 2057378d3d..4b80bb70b9 100644
 --- a/providers/fips/self_test_data.inc
@@ -305,7 +286,7 @@ index a5e60e8839..f9af07d12b 100644
 +
      /*
       * We ignore any errors from the fetches below. They are expected to fail
-      * if theose algorithms are not available.
+      * if these algorithms are not available.
 diff --git a/test/acvp_test.c b/test/acvp_test.c
 index fee880d441..13d7a0ea8b 100644
 --- a/test/acvp_test.c
@@ -435,19 +416,6 @@ index 9d7040ced2..f8beb538d4 100644
                  evpkdf_pbkdf1.txt
                  evpkdf_pbkdf2.txt
                  evpkdf_ss.txt
-@@ -65,12 +63,6 @@ push @files, qw(
-                 evppkey_ffdhe.txt
-                 evppkey_dh.txt
-                ) unless $no_dh;
--push @files, qw(
--                evpkdf_x942_des.txt
--                evpmac_cmac_des.txt
--               ) unless $no_des;
--push @files, qw(evppkey_dsa.txt) unless $no_dsa;
--push @files, qw(evppkey_ecx.txt) unless $no_ec;
- push @files, qw(
-                 evppkey_ecc.txt
-                 evppkey_ecdh.txt
 @@ -91,6 +83,7 @@ my @defltfiles = qw(
                       evpciph_cast5.txt
                       evpciph_chacha.txt
@@ -472,8 +440,8 @@ index 9d7040ced2..f8beb538d4 100644
 +                evpmac_cmac_des.txt
 +               ) unless $no_des;
  push @defltfiles, qw(evppkey_brainpool.txt) unless $no_ec;
- push @defltfiles, qw(evppkey_sm2.txt) unless $no_sm2;
- 
+ push @defltfiles, qw(evppkey_ecdsa_rfc6979.txt) unless $no_ec;
+ push @defltfiles, qw(evppkey_dsa_rfc6979.txt) unless $no_dsa;
 diff --git a/test/recipes/30-test_evp_data/evpmac_common.txt b/test/recipes/30-test_evp_data/evpmac_common.txt
 index 93195df97c..315413cd9b 100644
 --- a/test/recipes/30-test_evp_data/evpmac_common.txt
@@ -769,3 +737,56 @@ index 50b74a1e29..e2dcb68fb5 100644
 -- 
 2.41.0
 
+diff -up openssl-3.2.0/test/recipes/30-test_evp.t.patch openssl-3.2.0/test/recipes/30-test_evp.t
+--- openssl-3.2.0/test/recipes/30-test_evp.t.patch	2023-12-06 15:33:27.843751147 +0100
++++ openssl-3.2.0/test/recipes/30-test_evp.t	2023-12-06 15:34:27.585351920 +0100
+@@ -70,15 +70,6 @@ push @files, qw(
+                 evppkey_dh.txt
+                ) unless $no_dh;
+ push @files, qw(
+-                evpkdf_x942_des.txt
+-                evpmac_cmac_des.txt
+-               ) unless $no_des;
+-push @files, qw(evppkey_dsa.txt) unless $no_dsa;
+-push @files, qw(
+-                evppkey_ecx.txt
+-                evppkey_mismatch_ecx.txt
+-               ) unless $no_ecx;
+-push @files, qw(
+                 evppkey_ecc.txt
+                 evppkey_ecdh.txt
+                 evppkey_ecdsa.txt
+diff -up openssl-3.2.0/providers/fips/fipsprov.c.patch-fips openssl-3.2.0/providers/fips/fipsprov.c
+--- openssl-3.2.0/providers/fips/fipsprov.c.patch-fips	2023-12-06 15:49:08.711198219 +0100
++++ openssl-3.2.0/providers/fips/fipsprov.c	2023-12-06 15:55:42.362078721 +0100
+@@ -426,14 +426,16 @@ static const OSSL_ALGORITHM fips_keyexch
+ 
+ static const OSSL_ALGORITHM fips_signature[] = {
+ #ifndef OPENSSL_NO_DSA
+-    { PROV_NAMES_DSA, FIPS_DEFAULT_PROPERTIES, ossl_dsa_signature_functions },
++    /* We don't certify DSA in our FIPS provider */
++    /* { PROV_NAMES_DSA, FIPS_DEFAULT_PROPERTIES, ossl_dsa_signature_functions },*/
+ #endif
+     { PROV_NAMES_RSA, FIPS_DEFAULT_PROPERTIES, ossl_rsa_signature_functions },
+ #ifndef OPENSSL_NO_EC
+ # ifndef OPENSSL_NO_ECX
+-    { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
++    /* We don't certify Edwards curves in our FIPS provider */
++    /* { PROV_NAMES_ED25519, FIPS_UNAPPROVED_PROPERTIES,
+       ossl_ed25519_signature_functions },
+-    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions },
++    { PROV_NAMES_ED448, FIPS_UNAPPROVED_PROPERTIES, ossl_ed448_signature_functions },*/
+ # endif
+     { PROV_NAMES_ECDSA, FIPS_DEFAULT_PROPERTIES, ossl_ecdsa_signature_functions },
+ #endif
+diff -up openssl-3.2.0/test/recipes/30-test_evp.t.fips-min openssl-3.2.0/test/recipes/30-test_evp.t
+--- openssl-3.2.0/test/recipes/30-test_evp.t.fips-min	2024-02-01 11:00:56.823687618 +0100
++++ openssl-3.2.0/test/recipes/30-test_evp.t	2024-02-01 11:01:20.131934678 +0100
+@@ -124,7 +124,6 @@ push @defltfiles, qw(
+                ) unless $no_des;
+ push @defltfiles, qw(evppkey_brainpool.txt) unless $no_ec;
+ push @defltfiles, qw(evppkey_ecdsa_rfc6979.txt) unless $no_ec;
+-push @defltfiles, qw(evppkey_dsa_rfc6979.txt) unless $no_dsa;
+ push @defltfiles, qw(evppkey_sm2.txt) unless $no_sm2;
+ push @defltfiles, qw(evpciph_aes_gcm_siv.txt) unless $no_siv;
+ push @defltfiles, qw(evpciph_aes_siv.txt) unless $no_siv;

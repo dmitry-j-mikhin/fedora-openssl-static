@@ -12,26 +12,6 @@ Patch-id: 113
  providers/implementations/kem/rsa_kem.c       | 30 ++++++++++++++++++-
  4 files changed, 57 insertions(+), 1 deletion(-)
 
-diff --git a/include/openssl/core_names.h b/include/openssl/core_names.h
-index 29459049ad..9af0b1847d 100644
---- a/include/openssl/core_names.h
-+++ b/include/openssl/core_names.h
-@@ -480,6 +480,7 @@ extern "C" {
- #ifdef FIPS_MODULE
- #define OSSL_ASYM_CIPHER_PARAM_REDHAT_KAT_OEAP_SEED     "redhat-kat-oaep-seed"
- #endif
-+#define OSSL_ASYM_CIPHER_PARAM_REDHAT_FIPS_INDICATOR    "redhat-fips-indicator"
- 
- /*
-  * Encoder / decoder parameters
-@@ -514,6 +515,7 @@ extern "C" {
- 
- /* KEM parameters */
- #define OSSL_KEM_PARAM_OPERATION            "operation"
-+#define OSSL_KEM_PARAM_REDHAT_FIPS_INDICATOR "redhat-fips-indicator" /* int */
- 
- /* OSSL_KEM_PARAM_OPERATION values */
- #define OSSL_KEM_PARAM_OPERATION_RSASVE     "RSASVE"
 diff --git a/include/openssl/evp.h b/include/openssl/evp.h
 index f1a33ff6f2..dadbf46a5a 100644
 --- a/include/openssl/evp.h
@@ -80,13 +60,13 @@ index d169bfd396..bd4dcb4e27 100644
  }
  
 @@ -480,6 +501,7 @@ static const OSSL_PARAM known_gettable_ctx_params[] = {
-     OSSL_PARAM_uint(OSSL_ASYM_CIPHER_PARAM_IMPLICIT_REJECTION, NULL),
+     OSSL_PARAM_uint(OSSL_ASYM_CIPHER_PARAM_TLS_NEGOTIATED_VERSION, NULL),
  #ifdef FIPS_MODULE
      OSSL_PARAM_octet_string(OSSL_ASYM_CIPHER_PARAM_REDHAT_KAT_OEAP_SEED, NULL, 0),
 +    OSSL_PARAM_int(OSSL_ASYM_CIPHER_PARAM_REDHAT_FIPS_INDICATOR, NULL),
  #endif /* FIPS_MODULE */
+     OSSL_PARAM_uint(OSSL_ASYM_CIPHER_PARAM_IMPLICIT_REJECTION, NULL),
      OSSL_PARAM_END
- };
 diff --git a/providers/implementations/kem/rsa_kem.c b/providers/implementations/kem/rsa_kem.c
 index 8a6f585d0b..f4b7415074 100644
 --- a/providers/implementations/kem/rsa_kem.c
@@ -135,3 +115,26 @@ index 8a6f585d0b..f4b7415074 100644
 -- 
 2.41.0
 
+diff -up openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.kem-patch openssl-3.2.0/util/perl/OpenSSL/paramnames.pm
+--- openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.kem-patch	2024-01-02 12:49:04.598756268 +0100
++++ openssl-3.2.0/util/perl/OpenSSL/paramnames.pm	2024-01-02 12:53:16.466464414 +0100
+@@ -406,6 +406,7 @@ my %params = (
+     'ASYM_CIPHER_PARAM_TLS_NEGOTIATED_VERSION' =>   "tls-negotiated-version",
+     'ASYM_CIPHER_PARAM_IMPLICIT_REJECTION' =>       "implicit-rejection",
+     'ASYM_CIPHER_PARAM_REDHAT_KAT_OEAP_SEED' =>     "redhat-kat-oaep-seed",
++    'ASYM_CIPHER_PARAM_REDHAT_FIPS_INDICATOR' =>    "redhat-fips-indicator",
+ 
+ # Encoder / decoder parameters
+ 
+@@ -438,8 +439,9 @@ my %params = (
+     'SIGNATURE_PARAM_KAT' =>     "kat",
+ 
+ # KEM parameters
+-    'KEM_PARAM_OPERATION' =>            "operation",
+-    'KEM_PARAM_IKME' =>                 "ikme",
++    'KEM_PARAM_OPERATION' =>             "operation",
++    'KEM_PARAM_REDHAT_FIPS_INDICATOR' => "redhat-fips-indicator",
++    'KEM_PARAM_IKME' =>                  "ikme",
+ 
+ # Capabilities
+ 

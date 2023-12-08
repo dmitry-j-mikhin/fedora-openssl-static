@@ -61,8 +61,8 @@ index 9588a75964..76b4aac6fc 100644
 --- a/crypto/rsa/rsa_lib.c
 +++ b/crypto/rsa/rsa_lib.c
 @@ -155,8 +155,8 @@ void RSA_free(RSA *r)
- 
      CRYPTO_THREAD_lock_free(r->lock);
+     CRYPTO_FREE_REF(&r->references);
  
 -    BN_free(r->n);
 -    BN_free(r->e);

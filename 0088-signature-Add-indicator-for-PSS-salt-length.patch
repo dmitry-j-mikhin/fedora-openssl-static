@@ -6,23 +6,10 @@ Subject: [PATCH 41/48] 0088-signature-Add-indicator-for-PSS-salt-length.patch
 Patch-name: 0088-signature-Add-indicator-for-PSS-salt-length.patch
 Patch-id: 88
 ---
- include/openssl/core_names.h                  |  1 +
  include/openssl/evp.h                         |  4 ++++
  providers/implementations/signature/rsa_sig.c | 21 +++++++++++++++++++
  3 files changed, 26 insertions(+)
 
-diff --git a/include/openssl/core_names.h b/include/openssl/core_names.h
-index 1d1da4d3ca..48af87e236 100644
---- a/include/openssl/core_names.h
-+++ b/include/openssl/core_names.h
-@@ -458,6 +458,7 @@ extern "C" {
- #define OSSL_SIGNATURE_PARAM_MGF1_PROPERTIES    \
-     OSSL_PKEY_PARAM_MGF1_PROPERTIES
- #define OSSL_SIGNATURE_PARAM_DIGEST_SIZE        OSSL_PKEY_PARAM_DIGEST_SIZE
-+#define OSSL_SIGNATURE_PARAM_REDHAT_FIPS_INDICATOR "redhat-fips-indicator"
- 
- /* Asym cipher parameters */
- #define OSSL_ASYM_CIPHER_PARAM_DIGEST                   OSSL_PKEY_PARAM_DIGEST
 diff --git a/include/openssl/evp.h b/include/openssl/evp.h
 index 615857caf5..05f2d0f75a 100644
 --- a/include/openssl/evp.h
@@ -80,3 +67,36 @@ index cfaa4841cb..851671cfb1 100644
 -- 
 2.41.0
 
+diff -up openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.salt-patch openssl-3.2.0/util/perl/OpenSSL/paramnames.pm
+--- openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.salt-patch	2024-01-02 12:23:57.106998142 +0100
++++ openssl-3.2.0/util/perl/OpenSSL/paramnames.pm	2024-01-02 12:26:29.687472015 +0100
+@@ -377,17 +377,18 @@ my %params = (
+     'EXCHANGE_PARAM_KDF_UKM' =>               "kdf-ukm",
+ 
+ # Signature parameters
+-    'SIGNATURE_PARAM_ALGORITHM_ID' =>       "algorithm-id",
+-    'SIGNATURE_PARAM_PAD_MODE' =>           '*PKEY_PARAM_PAD_MODE',
+-    'SIGNATURE_PARAM_DIGEST' =>             '*PKEY_PARAM_DIGEST',
+-    'SIGNATURE_PARAM_PROPERTIES' =>         '*PKEY_PARAM_PROPERTIES',
+-    'SIGNATURE_PARAM_PSS_SALTLEN' =>        "saltlen",
+-    'SIGNATURE_PARAM_MGF1_DIGEST' =>        '*PKEY_PARAM_MGF1_DIGEST',
+-    'SIGNATURE_PARAM_MGF1_PROPERTIES' =>    '*PKEY_PARAM_MGF1_PROPERTIES',
+-    'SIGNATURE_PARAM_DIGEST_SIZE' =>        '*PKEY_PARAM_DIGEST_SIZE',
+-    'SIGNATURE_PARAM_NONCE_TYPE' =>         "nonce-type",
+-    'SIGNATURE_PARAM_INSTANCE' =>           "instance",
+-    'SIGNATURE_PARAM_CONTEXT_STRING' =>     "context-string",
++    'SIGNATURE_PARAM_ALGORITHM_ID' =>          "algorithm-id",
++    'SIGNATURE_PARAM_PAD_MODE' =>              '*PKEY_PARAM_PAD_MODE',
++    'SIGNATURE_PARAM_DIGEST' =>                '*PKEY_PARAM_DIGEST',
++    'SIGNATURE_PARAM_PROPERTIES' =>            '*PKEY_PARAM_PROPERTIES',
++    'SIGNATURE_PARAM_PSS_SALTLEN' =>           "saltlen",
++    'SIGNATURE_PARAM_MGF1_DIGEST' =>           '*PKEY_PARAM_MGF1_DIGEST',
++    'SIGNATURE_PARAM_MGF1_PROPERTIES' =>       '*PKEY_PARAM_MGF1_PROPERTIES',
++    'SIGNATURE_PARAM_DIGEST_SIZE' =>           '*PKEY_PARAM_DIGEST_SIZE',
++    'SIGNATURE_PARAM_REDHAT_FIPS_INDICATOR' => "redhat-fips-indicator",
++    'SIGNATURE_PARAM_NONCE_TYPE' =>            "nonce-type",
++    'SIGNATURE_PARAM_INSTANCE' =>              "instance",
++    'SIGNATURE_PARAM_CONTEXT_STRING' =>        "context-string",
+ 
+ # Asym cipher parameters
+     'ASYM_CIPHER_PARAM_DIGEST' =>                   '*PKEY_PARAM_DIGEST',

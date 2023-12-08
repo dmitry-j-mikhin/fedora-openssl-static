@@ -35,7 +35,7 @@ index 96c499c957..61c4cd8779 100644
 +     */
 +    pool = ossl_rand_pool_new(entropy + 64, 1, min_len, max_len);
      if (pool == NULL) {
-         ERR_raise(ERR_LIB_RAND, ERR_R_MALLOC_FAILURE);
+         ERR_raise(ERR_LIB_RAND, ERR_R_RAND_LIB);
          return 0;
 diff --git a/providers/implementations/rands/crngt.c b/providers/implementations/rands/crngt.c
 index fa4a2db14a..1f13fc759e 100644
@@ -83,7 +83,7 @@ index ea55363bf8..1b2410b3db 100644
 +        }
  
      if (reseed_required || prediction_resistance) {
-         if (!ossl_prov_drbg_reseed(drbg, prediction_resistance, NULL, 0,
+         if (!ossl_prov_drbg_reseed_unlocked(drbg, prediction_resistance, NULL,
 diff --git a/providers/implementations/rands/drbg_local.h b/providers/implementations/rands/drbg_local.h
 index 3b5417b43b..d27c50950b 100644
 --- a/providers/implementations/rands/drbg_local.h
@@ -110,7 +110,10 @@ index cd02a0236d..98c917b6d8 100644
  
  static uint64_t get_time_stamp(void);
  
-@@ -341,66 +343,8 @@ static ssize_t syscall_random(void *buf, size_t buflen)
+diff -up openssl-3.2.0/providers/implementations/rands/seeding/rand_unix.c.rand-patch openssl-3.2.0/providers/implementations/rands/seeding/rand_unix.c
+--- openssl-3.2.0/providers/implementations/rands/seeding/rand_unix.c.rand-patch	2024-01-02 11:52:21.837712036 +0100
++++ openssl-3.2.0/providers/implementations/rands/seeding/rand_unix.c	2024-01-02 11:54:40.576083169 +0100
+@@ -339,70 +339,8 @@ static ssize_t syscall_random(void *buf,
       * which is way below the OSSL_SSIZE_MAX limit. Therefore sign conversion
       * between size_t and ssize_t is safe even without a range check.
       */
@@ -170,6 +173,10 @@ index cd02a0236d..98c917b6d8 100644
 -#  elif (defined(__DragonFly__)  && __DragonFly_version >= 500700) \
 -     || (defined(__NetBSD__) && __NetBSD_Version >= 1000000000)
 -    return getrandom(buf, buflen, 0);
+-#  elif defined(__wasi__)
+-    if (getentropy(buf, buflen) == 0)
+-      return (ssize_t)buflen;
+-    return -1;
 -#  else
 -    errno = ENOSYS;
 -    return -1;
@@ -179,6 +186,3 @@ index cd02a0236d..98c917b6d8 100644
  }
  #  endif    /* defined(OPENSSL_RAND_SEED_GETRANDOM) */
  
--- 
-2.41.0
-

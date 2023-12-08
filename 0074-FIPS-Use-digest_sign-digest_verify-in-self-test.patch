@@ -121,50 +121,6 @@ index db1a1d7bc3..c94c3c53bd 100644
  
  int EVP_DigestSignUpdate(EVP_MD_CTX *ctx, const void *data, size_t dsize)
  {
-@@ -541,23 +553,29 @@ int EVP_DigestVerifyUpdate(EVP_MD_CTX *ctx, const void *data, size_t dsize)
-     return EVP_DigestUpdate(ctx, data, dsize);
- }
- 
--#ifndef FIPS_MODULE
- int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
-                         size_t *siglen)
- {
--    int sctx = 0, r = 0;
--    EVP_PKEY_CTX *dctx, *pctx = ctx->pctx;
-+    int r = 0;
-+#ifndef FIPS_MODULE
-+    int sctx = 0;
-+    EVP_PKEY_CTX *dctx;
-+#endif /* !defined(FIPS_MODULE) */
-+    EVP_PKEY_CTX *pctx = ctx->pctx;
- 
-+#ifndef FIPS_MODULE
-     if (pctx == NULL
-             || pctx->operation != EVP_PKEY_OP_SIGNCTX
-             || pctx->op.sig.algctx == NULL
-             || pctx->op.sig.signature == NULL)
-         goto legacy;
-+#endif /* !defined(FIPS_MODULE) */
- 
-     if (sigret == NULL || (ctx->flags & EVP_MD_CTX_FLAG_FINALISE) != 0)
-         return pctx->op.sig.signature->digest_sign_final(pctx->op.sig.algctx,
-                                                          sigret, siglen,
-                                                          sigret == NULL ? 0 : *siglen);
-+#ifndef FIPS_MODULE
-     dctx = EVP_PKEY_CTX_dup(pctx);
-     if (dctx == NULL)
-         return 0;
-@@ -566,8 +584,10 @@ int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
-                                                   sigret, siglen,
-                                                   *siglen);
-     EVP_PKEY_CTX_free(dctx);
-+#endif /* defined(FIPS_MODULE) */
-     return r;
- 
-+#ifndef FIPS_MODULE
-  legacy:
-     if (pctx == NULL || pctx->pmeth == NULL) {
-         ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
 @@ -639,6 +659,7 @@ int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
          }
      }
@@ -173,47 +129,6 @@ index db1a1d7bc3..c94c3c53bd 100644
  }
  
  int EVP_DigestSign(EVP_MD_CTX *ctx, unsigned char *sigret, size_t *siglen,
-@@ -669,21 +690,27 @@ int EVP_DigestSign(EVP_MD_CTX *ctx, unsigned char *sigret, size_t *siglen,
- int EVP_DigestVerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sig,
-                           size_t siglen)
- {
--    unsigned char md[EVP_MAX_MD_SIZE];
-     int r = 0;
-+#ifndef FIPS_MODULE
-+    unsigned char md[EVP_MAX_MD_SIZE];
-     unsigned int mdlen = 0;
-     int vctx = 0;
--    EVP_PKEY_CTX *dctx, *pctx = ctx->pctx;
-+    EVP_PKEY_CTX *dctx;
-+#endif /* !defined(FIPS_MODULE) */
-+    EVP_PKEY_CTX *pctx = ctx->pctx;
- 
-+#ifndef FIPS_MODULE
-     if (pctx == NULL
-             || pctx->operation != EVP_PKEY_OP_VERIFYCTX
-             || pctx->op.sig.algctx == NULL
-             || pctx->op.sig.signature == NULL)
-         goto legacy;
-+#endif /* !defined(FIPS_MODULE) */
- 
-     if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISE) != 0)
-         return pctx->op.sig.signature->digest_verify_final(pctx->op.sig.algctx,
-                                                            sig, siglen);
-+#ifndef FIPS_MODULE
-     dctx = EVP_PKEY_CTX_dup(pctx);
-     if (dctx == NULL)
-         return 0;
-@@ -691,8 +718,10 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sig,
-     r = dctx->op.sig.signature->digest_verify_final(dctx->op.sig.algctx,
-                                                     sig, siglen);
-     EVP_PKEY_CTX_free(dctx);
-+#endif /* !defined(FIPS_MODULE) */
-     return r;
- 
-+#ifndef FIPS_MODULE
-  legacy:
-     if (pctx == NULL || pctx->pmeth == NULL) {
-         ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
 @@ -732,6 +761,7 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sig,
      if (vctx || !r)
          return r;
@@ -310,3 +225,184 @@ index b6d5e8e134..77eec075e6 100644
 -- 
 2.37.1
 
+diff -up openssl-3.2.0/crypto/evp/m_sigver.c.digest-sign-patch openssl-3.2.0/crypto/evp/m_sigver.c
+--- openssl-3.2.0/crypto/evp/m_sigver.c.digest-sign-patch	2024-01-04 11:44:18.761559765 +0100
++++ openssl-3.2.0/crypto/evp/m_sigver.c	2024-01-04 11:51:18.297195401 +0100
+@@ -560,26 +560,33 @@ int EVP_DigestVerifyUpdate(EVP_MD_CTX *c
+     return EVP_DigestUpdate(ctx, data, dsize);
+ }
+ 
+-#ifndef FIPS_MODULE
+ int EVP_DigestSignFinal(EVP_MD_CTX *ctx, unsigned char *sigret,
+                         size_t *siglen)
+ {
+-    int sctx = 0, r = 0;
+-    EVP_PKEY_CTX *dctx = NULL, *pctx = ctx->pctx;
++    int r = 0;
++#ifndef FIPS_MODULE
++    int sctx = 0;
++    EVP_PKEY_CTX *dctx = NULL;
++#endif /* !defined(FIPS_MODULE) */
++    EVP_PKEY_CTX *pctx = ctx->pctx;
++ 
+ 
+     if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0) {
+         ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
+         return 0;
+     }
+ 
++#ifndef FIPS_MODULE
+     if (pctx == NULL
+             || pctx->operation != EVP_PKEY_OP_SIGNCTX
+             || pctx->op.sig.algctx == NULL
+             || pctx->op.sig.signature == NULL)
+         goto legacy;
++#endif /* !defined(FIPS_MODULE) */
+ 
+     if (sigret != NULL && (ctx->flags & EVP_MD_CTX_FLAG_FINALISE) == 0) {
+         /* try dup */
++#ifndef FIPS_MODULE
+         dctx = EVP_PKEY_CTX_dup(pctx);
+         if (dctx != NULL)
+             pctx = dctx;
+@@ -591,8 +598,10 @@ int EVP_DigestSignFinal(EVP_MD_CTX *ctx,
+         ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
+     else
+         EVP_PKEY_CTX_free(dctx);
++#endif /* !defined(FIPS_MODULE) */
+     return r;
+ 
++#ifndef FIPS_MODULE
+  legacy:
+     if (pctx == NULL || pctx->pmeth == NULL) {
+         ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
+@@ -704,25 +713,32 @@ int EVP_DigestSign(EVP_MD_CTX *ctx, unsi
+ int EVP_DigestVerifyFinal(EVP_MD_CTX *ctx, const unsigned char *sig,
+                           size_t siglen)
+ {
+-    unsigned char md[EVP_MAX_MD_SIZE];
+     int r = 0;
++#ifndef FIPS_MODULE
++    unsigned char md[EVP_MAX_MD_SIZE];
+     unsigned int mdlen = 0;
+     int vctx = 0;
+-    EVP_PKEY_CTX *dctx = NULL, *pctx = ctx->pctx;
++    EVP_PKEY_CTX *dctx = NULL;
++#endif /* !defined(FIPS_MODULE) */
++    EVP_PKEY_CTX *pctx = ctx->pctx;
++ 
+ 
+     if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISED) != 0) {
+         ERR_raise(ERR_LIB_EVP, EVP_R_FINAL_ERROR);
+         return 0;
+     }
+ 
++#ifndef FIPS_MODULE
+     if (pctx == NULL
+             || pctx->operation != EVP_PKEY_OP_VERIFYCTX
+             || pctx->op.sig.algctx == NULL
+             || pctx->op.sig.signature == NULL)
+         goto legacy;
++#endif /* !defined(FIPS_MODULE) */
+ 
+     if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISE) == 0) {
+         /* try dup */
++#ifndef FIPS_MODULE
+         dctx = EVP_PKEY_CTX_dup(pctx);
+         if (dctx != NULL)
+             pctx = dctx;
+@@ -733,8 +749,10 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ct
+         ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
+     else
+         EVP_PKEY_CTX_free(dctx);
++#endif /* !defined(FIPS_MODULE) */
+     return r;
+ 
++#ifndef FIPS_MODULE
+  legacy:
+     if (pctx == NULL || pctx->pmeth == NULL) {
+         ERR_raise(ERR_LIB_EVP, EVP_R_INITIALIZATION_ERROR);
+diff -up openssl-3.2.0/crypto/evp/m_sigver.c.digest-sign-patch openssl-3.2.0/crypto/evp/m_sigver.c
+--- openssl-3.2.0/crypto/evp/m_sigver.c.digest-sign-patch	2024-01-04 12:39:26.858137284 +0100
++++ openssl-3.2.0/crypto/evp/m_sigver.c	2024-01-04 12:40:28.201680446 +0100
+@@ -736,9 +736,9 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ct
+         goto legacy;
+ #endif /* !defined(FIPS_MODULE) */
+ 
++#ifndef FIPS_MODULE
+     if ((ctx->flags & EVP_MD_CTX_FLAG_FINALISE) == 0) {
+         /* try dup */
+-#ifndef FIPS_MODULE
+         dctx = EVP_PKEY_CTX_dup(pctx);
+         if (dctx != NULL)
+             pctx = dctx;
+diff -up openssl-3.2.0/crypto/evp/m_sigver.c.digest-sign-patch openssl-3.2.0/crypto/evp/m_sigver.c
+--- openssl-3.2.0/crypto/evp/m_sigver.c.digest-sign-patch	2024-01-04 12:55:41.172653897 +0100
++++ openssl-3.2.0/crypto/evp/m_sigver.c	2024-01-04 12:56:23.562017396 +0100
+@@ -584,9 +584,9 @@ int EVP_DigestSignFinal(EVP_MD_CTX *ctx,
+         goto legacy;
+ #endif /* !defined(FIPS_MODULE) */
+ 
++#ifndef FIPS_MODULE
+     if (sigret != NULL && (ctx->flags & EVP_MD_CTX_FLAG_FINALISE) == 0) {
+         /* try dup */
+-#ifndef FIPS_MODULE
+         dctx = EVP_PKEY_CTX_dup(pctx);
+         if (dctx != NULL)
+             pctx = dctx;
+diff -up openssl-3.2.0/crypto/evp/m_sigver.c.fips-new openssl-3.2.0/crypto/evp/m_sigver.c
+--- openssl-3.2.0/crypto/evp/m_sigver.c.fips-new	2024-01-30 23:50:10.115710238 +0100
++++ openssl-3.2.0/crypto/evp/m_sigver.c	2024-01-31 00:04:31.448164500 +0100
+@@ -598,7 +598,11 @@ int EVP_DigestSignFinal(EVP_MD_CTX *ctx,
+         ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
+     else
+         EVP_PKEY_CTX_free(dctx);
++    return r;
+ #endif /* !defined(FIPS_MODULE) */
++    r = pctx->op.sig.signature->digest_sign_final(pctx->op.sig.algctx,
++                                                  sigret, siglen,
++                                                  sigret == NULL ? 0 : *siglen);
+     return r;
+ 
+ #ifndef FIPS_MODULE
+@@ -749,7 +753,10 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ct
+         ctx->flags |= EVP_MD_CTX_FLAG_FINALISED;
+     else
+         EVP_PKEY_CTX_free(dctx);
++    return r;
+ #endif /* !defined(FIPS_MODULE) */
++    r = pctx->op.sig.signature->digest_verify_final(pctx->op.sig.algctx,
++                                                    sig, siglen);
+     return r;
+ 
+ #ifndef FIPS_MODULE
+diff -up openssl-3.2.0/crypto/evp/m_sigver.c.fix-ifdef openssl-3.2.0/crypto/evp/m_sigver.c
+--- openssl-3.2.0/crypto/evp/m_sigver.c.fix-ifdef	2024-02-01 09:23:07.877696442 +0100
++++ openssl-3.2.0/crypto/evp/m_sigver.c	2024-02-01 09:25:30.857169997 +0100
+@@ -599,11 +599,12 @@ int EVP_DigestSignFinal(EVP_MD_CTX *ctx,
+     else
+         EVP_PKEY_CTX_free(dctx);
+     return r;
+-#endif /* !defined(FIPS_MODULE) */
++#else
+     r = pctx->op.sig.signature->digest_sign_final(pctx->op.sig.algctx,
+                                                   sigret, siglen,
+                                                   sigret == NULL ? 0 : *siglen);
+     return r;
++#endif /* !defined(FIPS_MODULE) */
+ 
+ #ifndef FIPS_MODULE
+  legacy:
+@@ -754,10 +755,11 @@ int EVP_DigestVerifyFinal(EVP_MD_CTX *ct
+     else
+         EVP_PKEY_CTX_free(dctx);
+     return r;
+-#endif /* !defined(FIPS_MODULE) */
++#else
+     r = pctx->op.sig.signature->digest_verify_final(pctx->op.sig.algctx,
+                                                     sig, siglen);
+     return r;
++#endif /* !defined(FIPS_MODULE) */
+ 
+ #ifndef FIPS_MODULE
+  legacy:

@@ -111,9 +111,9 @@ index a37cbbdba8..bca3f3c674 100644
 --- a/providers/implementations/keymgmt/ec_kmgmt.c
 +++ b/providers/implementations/keymgmt/ec_kmgmt.c
 @@ -989,8 +989,17 @@ struct ec_gen_ctx {
-     int selection;
-     int ecdh_mode;
      EC_GROUP *gen_group;
+     unsigned char *dhkem_ikm;
+     size_t dhkem_ikmlen;
 +#ifdef FIPS_MODULE
 +    void *ecdsa_sig_ctx;
 +#endif
@@ -151,7 +151,7 @@ index a37cbbdba8..bca3f3c674 100644
 +#endif
  
      if (gctx->group_check != NULL)
-         ret = ret && ossl_ec_set_check_group_type_from_name(ec, gctx->group_check);
+         ret = ret && ossl_ec_set_check_group_type_from_name(ec,
 @@ -1348,7 +1367,10 @@ static void ec_gen_cleanup(void *genctx)
  
      if (gctx == NULL)
@@ -161,9 +161,9 @@ index a37cbbdba8..bca3f3c674 100644
 +    ecdsa_freectx(gctx->ecdsa_sig_ctx);
 +    gctx->ecdsa_sig_ctx = NULL;
 +#endif
+     OPENSSL_clear_free(gctx->dhkem_ikm, gctx->dhkem_ikmlen);
      EC_GROUP_free(gctx->gen_group);
      BN_free(gctx->p);
-     BN_free(gctx->a);
 diff --git a/providers/implementations/keymgmt/rsa_kmgmt.c b/providers/implementations/keymgmt/rsa_kmgmt.c
 index 3ba12c4889..ff49f8fcd8 100644
 --- a/providers/implementations/keymgmt/rsa_kmgmt.c
@@ -244,7 +244,7 @@ index 865d49d100..ebeb30e002 100644
  static OSSL_FUNC_signature_get_ctx_params_fn ecdsa_get_ctx_params;
  static OSSL_FUNC_signature_gettable_ctx_params_fn ecdsa_gettable_ctx_params;
 @@ -104,7 +104,7 @@ typedef struct {
- #endif
+     unsigned int nonce_type;
  } PROV_ECDSA_CTX;
  
 -static void *ecdsa_newctx(void *provctx, const char *propq)

@@ -8,7 +8,6 @@ Patch-name: 0083-hmac-Add-explicit-FIPS-indicator-for-key-length.patch
 Patch-id: 83
 ---
  include/crypto/evp.h                       |  7 +++++++
- include/openssl/core_names.h               |  1 +
  include/openssl/evp.h                      |  3 +++
  providers/implementations/macs/hmac_prov.c | 17 +++++++++++++++++
  4 files changed, 28 insertions(+)
@@ -31,18 +30,6 @@ index aa07153441..a13127bd59 100644
  struct evp_mac_st {
      OSSL_PROVIDER *prov;
      int name_id;
-diff --git a/include/openssl/core_names.h b/include/openssl/core_names.h
-index f185bc9342..1d1da4d3ca 100644
---- a/include/openssl/core_names.h
-+++ b/include/openssl/core_names.h
-@@ -175,6 +175,7 @@ extern "C" {
- #define OSSL_MAC_PARAM_SIZE             "size"                    /* size_t */
- #define OSSL_MAC_PARAM_BLOCK_SIZE       "block-size"              /* size_t */
- #define OSSL_MAC_PARAM_TLS_DATA_SIZE    "tls-data-size"           /* size_t */
-+#define OSSL_MAC_PARAM_REDHAT_FIPS_INDICATOR "redhat-fips-indicator"
- 
- /* Known MAC names */
- #define OSSL_MAC_NAME_BLAKE2BMAC    "BLAKE2BMAC"
 diff --git a/include/openssl/evp.h b/include/openssl/evp.h
 index 86f4e22c70..615857caf5 100644
 --- a/include/openssl/evp.h
@@ -67,9 +54,9 @@ index 52ebb08b8f..cf5c3ecbe7 100644
  
 +#include "crypto/evp.h"
 +
+ #include "internal/ssl3_cbc.h"
+
  #include "prov/implementations.h"
- #include "prov/provider_ctx.h"
- #include "prov/provider_util.h"
 @@ -244,6 +246,9 @@ static int hmac_final(void *vmacctx, unsigned char *out, size_t *outl,
  static const OSSL_PARAM known_gettable_ctx_params[] = {
      OSSL_PARAM_size_t(OSSL_MAC_PARAM_SIZE, NULL),
@@ -102,3 +89,26 @@ index 52ebb08b8f..cf5c3ecbe7 100644
 -- 
 2.41.0
 
+diff -up openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.hmac-patch openssl-3.2.0/util/perl/OpenSSL/paramnames.pm
+--- openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.hmac-patch	2024-01-02 12:18:16.909596613 +0100
++++ openssl-3.2.0/util/perl/OpenSSL/paramnames.pm	2024-01-02 12:20:18.465886160 +0100
+@@ -137,12 +137,13 @@ my %params = (
+ # If "engine",or "properties",are specified, they should always be paired
+ # with "cipher",or "digest".
+ 
+-    'MAC_PARAM_CIPHER' =>           '*ALG_PARAM_CIPHER',        # utf8 string
+-    'MAC_PARAM_DIGEST' =>           '*ALG_PARAM_DIGEST',        # utf8 string
+-    'MAC_PARAM_PROPERTIES' =>       '*ALG_PARAM_PROPERTIES',    # utf8 string
+-    'MAC_PARAM_SIZE' =>             "size",                     # size_t
+-    'MAC_PARAM_BLOCK_SIZE' =>       "block-size",               # size_t
+-    'MAC_PARAM_TLS_DATA_SIZE' =>    "tls-data-size",            # size_t
++    'MAC_PARAM_CIPHER' =>                '*ALG_PARAM_CIPHER',        # utf8 string
++    'MAC_PARAM_DIGEST' =>                '*ALG_PARAM_DIGEST',        # utf8 string
++    'MAC_PARAM_PROPERTIES' =>            '*ALG_PARAM_PROPERTIES',    # utf8 string
++    'MAC_PARAM_SIZE' =>                  "size",                     # size_t
++    'MAC_PARAM_BLOCK_SIZE' =>            "block-size",               # size_t
++    'MAC_PARAM_TLS_DATA_SIZE' =>         "tls-data-size",            # size_t
++    'MAC_PARAM_REDHAT_FIPS_INDICATOR' => "redhat-fips-indicator",    # size_t
+ 
+ # KDF / PRF parameters
+     'KDF_PARAM_SECRET' =>       "secret",                   # octet string

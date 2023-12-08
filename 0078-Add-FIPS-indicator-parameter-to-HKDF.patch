@@ -10,7 +10,6 @@ Patch-status: |
 From-dist-git-commit: 9409bc7044cf4b5773639cce20f51399888c45fd
 ---
  include/crypto/evp.h                      |   7 ++
- include/openssl/core_names.h              |   1 +
  include/openssl/kdf.h                     |   4 +
  providers/implementations/kdfs/hkdf.c     | 100 +++++++++++++++++++++-
  providers/implementations/kdfs/kbkdf.c    |  82 ++++++++++++++++--
@@ -38,18 +37,6 @@ index dbbdcccbda..aa07153441 100644
  struct evp_kdf_st {
      OSSL_PROVIDER *prov;
      int name_id;
-diff --git a/include/openssl/core_names.h b/include/openssl/core_names.h
-index c0cce14297..b431b9f871 100644
---- a/include/openssl/core_names.h
-+++ b/include/openssl/core_names.h
-@@ -226,6 +226,7 @@ extern "C" {
- #define OSSL_KDF_PARAM_X942_SUPP_PUBINFO    "supp-pubinfo"
- #define OSSL_KDF_PARAM_X942_SUPP_PRIVINFO   "supp-privinfo"
- #define OSSL_KDF_PARAM_X942_USE_KEYBITS     "use-keybits"
-+#define OSSL_KDF_PARAM_REDHAT_FIPS_INDICATOR "redhat-fips-indicator"
- 
- /* Known KDF names */
- #define OSSL_KDF_NAME_HKDF           "HKDF"
 diff --git a/include/openssl/kdf.h b/include/openssl/kdf.h
 index 0983230a48..86171635ea 100644
 --- a/include/openssl/kdf.h
@@ -872,3 +859,14 @@ index 4c274fe27a..5ce23c8eb9 100644
 -- 
 2.41.0
 
+diff -up openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.fips-indicators-patch openssl-3.2.0/util/perl/OpenSSL/paramnames.pm
+--- openssl-3.2.0/util/perl/OpenSSL/paramnames.pm.fips-indicators-patch	2024-01-02 12:11:36.633033731 +0100
++++ openssl-3.2.0/util/perl/OpenSSL/paramnames.pm	2024-01-02 12:12:54.022901822 +0100
+@@ -183,6 +183,7 @@ my %params = (
+     'KDF_PARAM_X942_SUPP_PUBINFO' =>    "supp-pubinfo",
+     'KDF_PARAM_X942_SUPP_PRIVINFO' =>   "supp-privinfo",
+     'KDF_PARAM_X942_USE_KEYBITS' =>     "use-keybits",
++    'KDF_PARAM_REDHAT_FIPS_INDICATOR' =>     "redhat-fips-indicator",
+     'KDF_PARAM_HMACDRBG_ENTROPY' =>     "entropy",
+     'KDF_PARAM_HMACDRBG_NONCE' =>       "nonce",
+     'KDF_PARAM_THREADS' =>        "threads",                # uint32_t

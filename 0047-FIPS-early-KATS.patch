@@ -30,9 +30,9 @@ index e3a629018a..3c09bd8638 100644
 +        }
 +    }
 +
-     module_checksum = fips_hmac_container;
-     checksum_len = sizeof(fips_hmac_container);
- 
+    if (st->module_checksum_data == NULL) {
+         module_checksum = fips_hmac_container;
+         checksum_len = sizeof(fips_hmac_container);
 @@ -451,18 +461,6 @@ int SELF_TEST_post(SELF_TEST_POST_PARAMS *st, int on_demand_test)
          }
      }

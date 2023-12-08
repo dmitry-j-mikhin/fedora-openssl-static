@@ -38,7 +38,7 @@ index cace25eda1..d527f12f18 100644
      {"ecdsap256", R_EC_P256},
      {"ecdsap384", R_EC_P384},
 @@ -423,8 +421,6 @@ static const OPT_PAIR ecdsa_choices[ECDSA_NUM] = {
- enum { R_EC_X25519 = ECDSA_NUM, R_EC_X448, EC_NUM };
+ };
  /* list of ecdh curves, extension of |ecdsa_choices| list above */
  static const OPT_PAIR ecdh_choices[EC_NUM] = {
 -    {"ecdhp160", R_EC_P160},

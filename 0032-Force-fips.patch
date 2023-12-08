@@ -31,7 +31,7 @@ index 058fb58837..5274265a70 100644
 -        ok = provider_conf_params(prov, NULL, NULL, value, cnf);
 +        ok = cnf ? provider_conf_params(prov, NULL, NULL, value, cnf) : 1;
  
-         if (ok) {
+         if (ok == 1) {
              if (!ossl_provider_activate(prov, 1, 0)) {
 @@ -309,6 +311,30 @@ static int provider_conf_init(CONF_IMODULE *md, const CONF *cnf)
              return 0;
