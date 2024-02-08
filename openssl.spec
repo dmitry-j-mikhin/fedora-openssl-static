@@ -192,6 +192,16 @@ OpenSSL is a toolkit for supporting cryptography. The openssl-devel
 package contains include files needed to develop applications which
 support various cryptographic algorithms and protocols.
 
+%package static
+Summary:  Libraries for static linking of applications which will use OpenSSL
+Requires: %{name}-devel%{?_isa} = %{epoch}:%{version}-%{release}
+
+%description static
+OpenSSL is a toolkit for supporting cryptography. The openssl-static
+package contains static libraries needed for static linking of
+applications which support various cryptographic algorithms and
+protocols.
+
 %package perl
 Summary: Perl scripts provided with OpenSSL
 Requires: perl-interpreter
@@ -358,11 +368,6 @@ for lib in $RPM_BUILD_ROOT%{_libdir}/*.so.%{version} ; do
 	ln -s -f `basename ${lib}` $RPM_BUILD_ROOT%{_libdir}/`basename ${lib} .%{version}`.%{soversion}
 done
 
-# Remove static libraries
-for lib in $RPM_BUILD_ROOT%{_libdir}/*.a ; do
-	rm -f ${lib}
-done
-
 # Install a makefile for generating keys and self-signed certs, and a script
 # for generating them on the fly.
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/pki/tls/certs
@@ -462,6 +467,9 @@ install -m644 %{SOURCE9} \
 %{_libdir}/*.so
 %{_mandir}/man3/*
 %{_libdir}/pkgconfig/*.pc
+
+%files static
+%{_libdir}/*.a
 
 %files perl
 %{_bindir}/c_rehash
